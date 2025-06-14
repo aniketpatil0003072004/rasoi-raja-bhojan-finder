@@ -1,12 +1,24 @@
 
 import HeroSection from "@/components/HeroSection";
 import MessCard from "@/components/MessCard";
-import { mockMesses } from "@/data/mockMesses";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Mess } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
-  const featuredMesses = mockMesses.slice(0, 3); // Show 3 featured messes
+  const fetchFeaturedMesses = async (): Promise<Mess[]> => {
+    const { data, error } = await supabase.from("messes").select("*").order('created_at', { ascending: false }).limit(3);
+    if (error) throw new Error(error.message);
+    return data || [];
+  };
+
+  const { data: featuredMesses, isLoading, error } = useQuery<Mess[]>({
+    queryKey: ["featuredMesses"],
+    queryFn: fetchFeaturedMesses,
+  });
 
   return (
     <div>
@@ -18,7 +30,24 @@ const Index = () => {
           <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
             Handpicked selections of popular and highly-rated messes to get you started.
           </p>
-          {featuredMesses.length > 0 ? (
+          {isLoading ? (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="border rounded-lg overflow-hidden shadow-lg">
+                  <Skeleton className="w-full h-48" />
+                  <div className="p-4 space-y-2">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-10 w-full mt-4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <p className="text-center text-destructive">Could not load featured messes.</p>
+          ) : featuredMesses && featuredMesses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {featuredMesses.map((mess) => (
                 <MessCard key={mess.id} mess={mess} />
@@ -27,15 +56,14 @@ const Index = () => {
           ) : (
             <p className="text-center text-muted-foreground">No featured messes available at the moment.</p>
           )}
-          {mockMesses.length > 3 && (
-            <div className="text-center mt-12">
-              <Button asChild size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                <Link to="/messes">
-                  View All Messes
-                </Link>
-              </Button>
-            </div>
-          )}
+          
+          <div className="text-center mt-12">
+            <Button asChild size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10">
+              <Link to="/messes">
+                View All Messes
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -66,4 +94,3 @@ const Index = () => {
 };
 
 export default Index;
-

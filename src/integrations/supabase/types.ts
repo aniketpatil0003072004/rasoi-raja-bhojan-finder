@@ -9,7 +9,136 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      menus: {
+        Row: {
+          breakfast: string | null
+          day: Database["public"]["Enums"]["day_of_week"]
+          dinner: string | null
+          id: string
+          lunch: string | null
+          mess_id: string
+        }
+        Insert: {
+          breakfast?: string | null
+          day: Database["public"]["Enums"]["day_of_week"]
+          dinner?: string | null
+          id?: string
+          lunch?: string | null
+          mess_id: string
+        }
+        Update: {
+          breakfast?: string | null
+          day?: Database["public"]["Enums"]["day_of_week"]
+          dinner?: string | null
+          id?: string
+          lunch?: string | null
+          mess_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menus_mess_id_fkey"
+            columns: ["mess_id"]
+            isOneToOne: false
+            referencedRelation: "messes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messes: {
+        Row: {
+          address: string | null
+          contact: string | null
+          created_at: string
+          cuisine: string[] | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_verified: boolean | null
+          monthly_price: number | null
+          name: string
+          offers_delivery: boolean | null
+          operating_hours: string | null
+          owner_id: string | null
+          rating: number | null
+          review_count: number | null
+        }
+        Insert: {
+          address?: string | null
+          contact?: string | null
+          created_at?: string
+          cuisine?: string[] | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_verified?: boolean | null
+          monthly_price?: number | null
+          name: string
+          offers_delivery?: boolean | null
+          operating_hours?: string | null
+          owner_id?: string | null
+          rating?: number | null
+          review_count?: number | null
+        }
+        Update: {
+          address?: string | null
+          contact?: string | null
+          created_at?: string
+          cuisine?: string[] | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_verified?: boolean | null
+          monthly_price?: number | null
+          name?: string
+          offers_delivery?: boolean | null
+          operating_hours?: string | null
+          owner_id?: string | null
+          rating?: number | null
+          review_count?: number | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          mess_id: string
+          payment_screenshot_url: string | null
+          start_date: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          mess_id: string
+          payment_screenshot_url?: string | null
+          start_date: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          mess_id?: string
+          payment_screenshot_url?: string | null
+          start_date?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_mess_id_fkey"
+            columns: ["mess_id"]
+            isOneToOne: false
+            referencedRelation: "messes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +147,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      day_of_week:
+        | "Monday"
+        | "Tuesday"
+        | "Wednesday"
+        | "Thursday"
+        | "Friday"
+        | "Saturday"
+        | "Sunday"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +269,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      day_of_week: [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ],
+    },
   },
 } as const
