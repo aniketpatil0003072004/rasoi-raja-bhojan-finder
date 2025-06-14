@@ -2,8 +2,8 @@ import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Mess, Menu, Profile, Review, Subscription } from "@/types";
-import { Star, MapPin, IndianRupee, Phone, Clock, Utensils, Truck, CheckCircle, XCircle, MessageSquare } from "lucide-react";
+import { Mess, Menu, Profile, Subscription } from "@/types";
+import { Star, MapPin, IndianRupee, Phone, Clock, Utensils, Truck, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import AddMenuForm from "@/components/AddMenuForm";
 import SubscriptionForm from "@/components/SubscriptionForm";
-import ReviewForm from "@/components/ReviewForm";
-import ReviewList from "@/components/ReviewList";
 import {
   Dialog,
   DialogContent,
@@ -22,10 +20,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-type ReviewWithProfile = Review & {
-  profiles: Pick<Profile, 'full_name' | 'avatar_url'> | null;
-};
 
 const MessDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -69,16 +63,6 @@ const MessDetailPage = () => {
     return data;
   };
 
-  const fetchReviews = async (messId: string): Promise<ReviewWithProfile[]> => {
-    const { data, error } = await (supabase.from('reviews') as any) // Use 'as any' to bypass stale types
-      .select('*, profiles(full_name, avatar_url)')
-      .eq('mess_id', messId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw new Error(error.message);
-    return data || [];
-  };
-  
   const fetchUserSubscription = async (messId: string, userId: string): Promise<Subscription | null> => {
     const { data, error } = await supabase
       .from('subscriptions')
@@ -113,12 +97,6 @@ const MessDetailPage = () => {
     enabled: !!user,
   });
 
-  const { data: reviews, isLoading: areReviewsLoading, error: reviewsError } = useQuery({
-    queryKey: ['reviews', id],
-    queryFn: () => fetchReviews(id!),
-    enabled: !!id,
-  });
-
   const { data: userSubscription } = useQuery({
     queryKey: ['userSubscription', id, user?.id],
     queryFn: () => fetchUserSubscription(id!, user!.id),
@@ -131,26 +109,9 @@ const MessDetailPage = () => {
     return [...menu].sort((a, b) => dayOrder[a.day] - dayOrder[b.day]);
   }, [menu]);
 
-  const { averageRating, reviewCount } = React.useMemo(() => {
-    if (!reviews || reviews.length === 0) {
-      return { averageRating: 0, reviewCount: 0 };
-    }
-    const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
-    return {
-      averageRating: parseFloat((totalRating / reviews.length).toFixed(1)),
-      reviewCount: reviews.length,
-    };
-  }, [reviews]);
-
-  const isLoading = isMessLoading || isMenuLoading || areReviewsLoading;
+  const isLoading = isMessLoading || isMenuLoading;
   const isOwner = user && mess && user.id === mess.owner_id;
   const isStudent = profile?.role === 'student';
-  const canReview = isStudent && !!userSubscription;
-
-  const handleReviewSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['reviews', id] });
-    queryClient.invalidateQueries({ queryKey: ['mess', id] });
-  };
 
   if (isLoading) {
     return (
@@ -171,7 +132,7 @@ const MessDetailPage = () => {
     );
   }
 
-  const error = messError || menuError || reviewsError;
+  const error = messError || menuError;
   if (error) {
     return <div className="container py-8 text-center text-xl text-destructive">Error: {(error as Error).message}</div>;
   }
@@ -189,7 +150,7 @@ const MessDetailPage = () => {
           <div className="flex flex-wrap items-center text-muted-foreground mb-4 gap-x-3 gap-y-1">
             <div className="flex items-center">
               <Star className="w-5 h-5 text-yellow-400 mr-1" fill="currentColor" />
-              <span>{averageRating} ({reviewCount} reviews)</span>
+              <span>{mess.rating?.toFixed(1) || 'N/A'} ({mess.review_count || 0} reviews)</span>
             </div>
             <Separator orientation="vertical" className="h-5" />
             <div className="flex items-center">
@@ -283,7 +244,29 @@ const MessDetailPage = () => {
                     </DialogContent>
                   </Dialog>
                )}
-               <Button variant="outline" className="w-full">Contact Mess</Button>
+               <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full">Contact Mess</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Contact {mess.name}</DialogTitle>
+                    <DialogDescription>
+                      You can reach the mess owner using the details below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-primary"/>
+                        <a href={`tel:${mess.contact}`} className="text-primary hover:underline">{mess.contact}</a>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-primary"/>
+                        <span>{mess.address}</span>
+                    </div>
+                  </div>
+                </DialogContent>
+               </Dialog>
             </CardContent>
           </Card>
 
@@ -313,51 +296,9 @@ const MessDetailPage = () => {
           </Card>
         </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <MessageSquare className="w-6 h-6 mr-2 text-primary" />
-            Reviews
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {canReview && (
-            <div>
-              <h4 className="font-semibold text-lg mb-2">Leave a Review</h4>
-              <ReviewForm messId={id!} onSuccess={handleReviewSuccess} />
-              <Separator className="my-6" />
-            </div>
-          )}
-          <ReviewList reviews={(reviews as ReviewWithProfile[]) || []} />
-        </CardContent>
-      </Card>
-
-      <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" className="w-full">Contact Mess</Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Contact {mess.name}</DialogTitle>
-            <DialogDescription>
-              You can reach the mess owner using the details below.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-2">
-            <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-primary"/>
-                <a href={`tel:${mess.contact}`} className="text-primary hover:underline">{mess.contact}</a>
-            </div>
-            <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary"/>
-                <span>{mess.address}</span>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
 
 export default MessDetailPage;
+</lov-write>
