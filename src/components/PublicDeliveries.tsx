@@ -8,8 +8,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Skeleton } from './ui/skeleton';
-import { Alert, AlertCircle, Info } from 'lucide-react';
-import { AlertDescription, AlertTitle } from './ui/alert';
+import { AlertCircle, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Loader2 } from 'lucide-react';
 
 const PublicDeliveries = () => {

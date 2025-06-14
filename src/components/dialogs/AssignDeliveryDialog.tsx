@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -78,7 +77,7 @@ const AssignDeliveryDialog = ({ subscription, isOpen, onOpenChange }: AssignDeli
   };
   
   const handleReleaseToPublicPool = () => {
-    mutation.mutate(); // No form values, will set delivery_person_id to null
+    mutation.mutate(undefined); // Pass undefined to satisfy the mutation function's signature
   };
   
   return (
