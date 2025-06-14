@@ -16,6 +16,7 @@ import { AuthProvider } from "./contexts/AuthContext"; // Import AuthProvider
 import AddMessPage from "./pages/AddMessPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OwnerDashboardPage from "./pages/OwnerDashboardPage"; // Import new page
+import MySubscriptionsPage from "./pages/MySubscriptionsPage";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,10 @@ const App = () => (
               <Route element={<ProtectedRoute allowedRoles={['mess_owner']} />}>
                 <Route path="/add-mess" element={<AddMessPage />} />
                 <Route path="/dashboard" element={<OwnerDashboardPage />} />
+              </Route>
+
+              <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+                <Route path="/my-subscriptions" element={<MySubscriptionsPage />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
