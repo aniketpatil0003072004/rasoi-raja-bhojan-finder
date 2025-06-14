@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { UtensilsCrossed, Search, UserCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,20 +31,19 @@ const Header = () => {
       if (user && user.id) {
         setProfileLoading(true);
         try {
-          // @ts-ignore - Supabase types might not be updated yet with 'profiles' table
-          const { data, error } = await supabase
-            .from('profiles') // This line was causing the TS error
+          // More specific cast to handle the case where Supabase types are not yet updated
+          // This assumes the query will return data matching the Profile structure or an error.
+          const { data, error } = await (supabase
+            .from('profiles')
             .select('full_name, avatar_url, phone')
             .eq('id', user.id)
-            .single();
+            .single() as Promise<{ data: Profile | null; error: any; }>);
 
           if (error) {
             console.error("Error fetching profile:", error);
-            // Set a default profile using user's phone if fetching fails
-            // Ensure user.phone is accessed safely
             setProfile({ phone: user.phone || null });
           } else {
-            setProfile(data as Profile); 
+            setProfile(data); 
           }
         } catch (e) {
           console.error("Exception fetching profile:", e);
@@ -161,4 +159,3 @@ const Header = () => {
 };
 
 export default Header;
-
