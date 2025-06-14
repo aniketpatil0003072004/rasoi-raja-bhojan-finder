@@ -51,13 +51,13 @@ const AddMessForm = () => {
       contact: "",
       operating_hours: "",
       offers_delivery: false,
-      cuisine: [] as any, // Changed to string to match input, 'any' to satisfy initial type
+      cuisine: "" as any,
       image_url: ""
     },
   });
 
   const addMessMutation = useMutation({
-    mutationFn: async (newMess: TablesInsert<'messes'>) => {
+    mutationFn: async (newMess: MessFormValues) => {
       if (!user) throw new Error("You must be logged in to add a mess.");
       
       const { data, error } = await supabase
@@ -167,7 +167,7 @@ const AddMessForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cuisine Types</FormLabel>
-              <FormControl><Input placeholder="e.g. North Indian, South Indian" {...field} onChange={e => field.onChange(e.target.value)} /></FormControl>
+              <FormControl><Input placeholder="e.g. North Indian, South Indian" {...field} value={field.value as unknown as string} onChange={e => field.onChange(e.target.value)} /></FormControl>
               <FormDescription>Please provide a comma-separated list of cuisines.</FormDescription>
               <FormMessage />
             </FormItem>

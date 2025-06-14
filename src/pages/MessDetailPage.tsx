@@ -1,4 +1,4 @@
-
+import React from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,9 +9,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/AuthContext";
+import AddMenuForm from "@/components/AddMenuForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const MessDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const [isMenuDialogOpen, setIsMenuDialogOpen] = React.useState(false);
 
   const fetchMess = async (messId: string): Promise<Mess | null> => {
     const { data, error } = await supabase
@@ -48,6 +60,7 @@ const MessDetailPage = () => {
   });
   
   const isLoading = isMessLoading || isMenuLoading;
+  const isOwner = user && mess && user.id === mess.owner_id;
 
   if (isLoading) {
     return (
@@ -98,10 +111,30 @@ const MessDetailPage = () => {
 
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Utensils className="w-6 h-6 mr-2 text-primary" />
-                Weekly Menu
-              </CardTitle>
+               <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center">
+                  <Utensils className="w-6 h-6 mr-2 text-primary" />
+                  Weekly Menu
+                </CardTitle>
+                {isOwner && (
+                  <Dialog open={isMenuDialogOpen} onOpenChange={setIsMenuDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">Edit Menu</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[650px]">
+                      <DialogHeader>
+                        <DialogTitle>Manage Weekly Menu</DialogTitle>
+                        <DialogDescription>
+                          Update the breakfast, lunch, and dinner options for each day. Click save when you're done.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="max-h-[70vh] overflow-y-auto p-1 pr-2">
+                        {id && <AddMenuForm messId={id} onSuccess={() => setIsMenuDialogOpen(false)} />}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {menu && menu.length > 0 ? (
@@ -118,7 +151,7 @@ const MessDetailPage = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">Menu not available yet.</p>
+                <p className="text-muted-foreground">Menu not available yet. {isOwner && "Click 'Edit Menu' to add it."}</p>
               )}
             </CardContent>
           </Card>
