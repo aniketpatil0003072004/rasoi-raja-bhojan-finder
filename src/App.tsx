@@ -10,7 +10,9 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import MessesPage from "./pages/MessesPage";
 import MessDetailPage from "./pages/MessDetailPage";
-import ScrollToTop from "./components/ScrollToTop"; // We'll create this utility
+import ScrollToTop from "./components/ScrollToTop";
+import AuthPage from "./pages/AuthPage"; // Import AuthPage
+import { AuthProvider } from "./contexts/AuthContext"; // Import AuthProvider
 
 const queryClient = new QueryClient();
 
@@ -29,22 +31,24 @@ const Layout = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route element={<Layout />}> {/* Apply layout to all these routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/messes" element={<MessesPage />} />
-            <Route path="/mess/:id" element={<MessDetailPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider> {/* Wrap with AuthProvider */}
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            <Route element={<Layout />}> {/* Apply layout to all these routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/messes" element={<MessesPage />} />
+              <Route path="/mess/:id" element={<MessDetailPage />} />
+              <Route path="/auth" element={<AuthPage />} /> {/* Add AuthPage route */}
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
 export default App;
-
