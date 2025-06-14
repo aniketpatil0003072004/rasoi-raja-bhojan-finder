@@ -1,6 +1,5 @@
-
 import { Link, useNavigate } from "react-router-dom";
-import { UtensilsCrossed, Search, UserCircle, LogOut } from "lucide-react";
+import { UtensilsCrossed, Search, UserCircle, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -132,8 +131,12 @@ const Header = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {/* <DropdownMenuItem>Profile</DropdownMenuItem> */}
-                {/* <DropdownMenuItem>Settings</DropdownMenuItem> */}
+                {profile?.role === 'mess_owner' && (
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />

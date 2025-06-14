@@ -15,6 +15,7 @@ import AuthPage from "./pages/AuthPage"; // Import AuthPage
 import { AuthProvider } from "./contexts/AuthContext"; // Import AuthProvider
 import AddMessPage from "./pages/AddMessPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import OwnerDashboardPage from "./pages/OwnerDashboardPage"; // Import new page
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
               
               <Route element={<ProtectedRoute allowedRoles={['mess_owner']} />}>
                 <Route path="/add-mess" element={<AddMessPage />} />
+                <Route path="/dashboard" element={<OwnerDashboardPage />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

@@ -198,7 +198,7 @@ const AuthPage = () => {
                       <RadioGroup
                         onValueChange={field.onChange}
                         defaultValue={field.value}
-                        className="flex flex-col sm:flex-row sm:justify-between pt-1"
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1"
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="student" id="role-student" />

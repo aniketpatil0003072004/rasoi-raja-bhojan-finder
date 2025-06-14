@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -47,10 +46,8 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ messId, onSuccess }
     setIsSubmitting(true);
 
     const file = values.paymentProof[0];
-    const filePath = `${user.id}/${messId}-${Date.now()}`;
+    const filePath = `${messId}/${user.id}/${Date.now()}-${file.name}`;
 
-    // IMPORTANT: The following upload will fail until storage policies for the 'payment_proofs' bucket are set up.
-    // This will be addressed in the next step.
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('payment_proofs')
       .upload(filePath, file);
