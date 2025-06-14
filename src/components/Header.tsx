@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { UtensilsCrossed, Search, UserCircle, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -85,12 +86,14 @@ const Header = () => {
           <span className="font-bold text-2xl text-primary">Rasoi Raja</span>
         </Link>
         <nav className="flex flex-1 items-center space-x-4">
-          <Link
-            to="/messes"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Find a Mess
-          </Link>
+          {(!user || profile?.role === 'student') && (
+            <Link
+              to="/messes"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Find a Mess
+            </Link>
+          )}
           {(!user || profile?.role === 'mess_owner') && (
             <Link
               to="/add-mess"

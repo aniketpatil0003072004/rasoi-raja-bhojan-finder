@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -55,13 +56,19 @@ const SubscriptionManagement = () => {
     enabled: !!user,
   });
 
+  console.log("Owner messes data:", messes);
+
   const messIds = React.useMemo(() => messes?.map((m) => m.id) || [], [messes]);
+
+  console.log("Extracted mess IDs:", messIds);
 
   const { data: subscriptions, isLoading: isSubsLoading } = useQuery({
     queryKey: ['pendingSubscriptions', messIds],
     queryFn: () => fetchPendingSubscriptions(messIds),
     enabled: messIds.length > 0,
   });
+
+  console.log("Pending subscriptions data:", subscriptions);
 
   const handleViewProof = async (filePath: string, studentName: string) => {
     const { data, error } = await supabase.storage.from('payment_proofs').createSignedUrl(filePath, 60); // 1 minute URL
