@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +12,7 @@ import { toast as sonnerToast } from "sonner";
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Eye, EyeOff } from 'lucide-react';
 
 const signUpSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
@@ -33,6 +33,8 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
 
   const {
     register: registerSignUp,
@@ -128,7 +130,19 @@ const AuthPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signIn-password">Password</Label>
-                  <Input id="signIn-password" type="password" {...registerSignIn('password')} />
+                  <div className="relative">
+                    <Input id="signIn-password" type={showSignInPassword ? 'text' : 'password'} {...registerSignIn('password')} className="pr-10" />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowSignInPassword((prev) => !prev)}
+                    >
+                      {showSignInPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="sr-only">{showSignInPassword ? 'Hide password' : 'Show password'}</span>
+                    </Button>
+                  </div>
                   {signInErrors.password && <p className="text-sm text-destructive">{signInErrors.password.message}</p>}
                 </div>
               </CardContent>
@@ -160,7 +174,19 @@ const AuthPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signUp-password">Password</Label>
-                  <Input id="signUp-password" type="password" {...registerSignUp('password')} />
+                  <div className="relative">
+                    <Input id="signUp-password" type={showSignUpPassword ? 'text' : 'password'} {...registerSignUp('password')} className="pr-10" />
+                     <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowSignUpPassword((prev) => !prev)}
+                    >
+                      {showSignUpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="sr-only">{showSignUpPassword ? 'Hide password' : 'Show password'}</span>
+                    </Button>
+                  </div>
                   {signUpErrors.password && <p className="text-sm text-destructive">{signUpErrors.password.message}</p>}
                 </div>
                 <div className="space-y-3">
