@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { UtensilsCrossed, Search, UserCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,9 +32,8 @@ const Header = () => {
       if (user && user.id) {
         setProfileLoading(true);
         try {
-          // @ts-ignore - Supabase types are not yet updated with the 'profiles' table. This is safe.
-          const { data, error } = await supabase
-            .from('profiles')
+          // Using 'as any' to bypass the TypeScript error as Supabase types are not yet updated.
+          const { data, error } = await (supabase.from('profiles') as any)
             .select('full_name, avatar_url, phone')
             .eq('id', user.id)
             .single();
