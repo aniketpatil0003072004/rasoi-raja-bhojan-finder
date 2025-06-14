@@ -1,6 +1,8 @@
-
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Mess, SubscriptionWithDetails } from '@/types';
@@ -10,13 +12,26 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+
+const approvalSchema = z.object({
+  confirmationProof: z
+    .instanceof(FileList)
+    .refine((files) => files?.length === 1, 'Confirmation proof is required.'),
+});
+
+type ApprovalFormValues = z.infer<typeof approvalSchema>;
 
 const SubscriptionManagement = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [viewingProof, setViewingProof] = React.useState<{ url: string; studentName: string } | null>(null);
+  const [approvingSub, setApprovingSub] = React.useState<SubscriptionWithDetails | null>(null);
 
   const fetchOwnerMesses = async (ownerId: string): Promise<Mess[]> => {
     const { data, error } = await supabase.from('messes').select('*').eq('owner_id', ownerId);
@@ -42,7 +57,7 @@ const SubscriptionManagement = () => {
 
   const messIds = React.useMemo(() => messes?.map((m) => m.id) || [], [messes]);
 
-  const { data: subscriptions, isLoading: isSubsLoading, refetch } = useQuery({
+  const { data: subscriptions, isLoading: isSubsLoading } = useQuery({
     queryKey: ['pendingSubscriptions', messIds],
     queryFn: () => fetchPendingSubscriptions(messIds),
     enabled: messIds.length > 0,
@@ -56,14 +71,71 @@ const SubscriptionManagement = () => {
     }
     setViewingProof({ url: data.signedUrl, studentName });
   };
-  
-  // Placeholder for future functionality
-  const handleApprove = (subscriptionId: string) => {
-    toast.info("Approval feature coming soon!", { description: "You will be able to upload your payment confirmation here." });
-  };
-  
-  const handleReject = (subscriptionId: string) => {
-    toast.info("Rejection feature coming soon!");
+
+  const approveMutation = useMutation({
+    mutationFn: async ({ subscriptionId, confirmationFile }: { subscriptionId: string; confirmationFile: File }) => {
+      const filePath = `confirmations/${user!.id}/${subscriptionId}-${confirmationFile.name}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('payment_proofs')
+        .upload(filePath, confirmationFile);
+
+      if (uploadError) {
+        throw new Error(`Storage error: ${uploadError.message}`);
+      }
+
+      const { error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .update({
+          status: 'active',
+          owner_confirmation_screenshot_url: uploadData.path,
+        })
+        .eq('id', subscriptionId);
+
+      if (subscriptionError) {
+        throw new Error(`Database error: ${subscriptionError.message}`);
+      }
+    },
+    onSuccess: () => {
+      toast.success("Subscription approved successfully!");
+      queryClient.invalidateQueries({ queryKey: ['pendingSubscriptions'] });
+      setApprovingSub(null);
+    },
+    onError: (error: Error) => {
+      toast.error("Approval failed.", { description: error.message });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (subscriptionId: string) => {
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({ status: 'rejected' })
+        .eq('id', subscriptionId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      toast.success("Subscription has been rejected.");
+      queryClient.invalidateQueries({ queryKey: ['pendingSubscriptions'] });
+    },
+    onError: (error: Error) => {
+      toast.error("Rejection failed.", { description: error.message });
+    },
+  });
+
+  const form = useForm<ApprovalFormValues>({
+    resolver: zodResolver(approvalSchema),
+  });
+
+  const onApproveSubmit = (values: ApprovalFormValues) => {
+    if (!approvingSub) return;
+    approveMutation.mutate({
+      subscriptionId: approvingSub.id,
+      confirmationFile: values.confirmationProof[0],
+    });
   };
 
   const isLoading = isMessesLoading || isSubsLoading;
@@ -88,7 +160,7 @@ const SubscriptionManagement = () => {
             <AlertDescription>You have no new subscription requests to review at this time.</AlertDescription>
           </Alert>
         ) : (
-          <Dialog>
+          <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -105,27 +177,83 @@ const SubscriptionManagement = () => {
                     <TableCell>{sub.messes?.name || 'N/A'}</TableCell>
                     <TableCell><Badge variant="secondary">{sub.status}</Badge></TableCell>
                     <TableCell className="text-right space-x-2">
-                       <DialogTrigger asChild>
-                         <Button variant="outline" size="sm" onClick={() => sub.payment_screenshot_url && handleViewProof(sub.payment_screenshot_url, sub.profiles?.full_name || 'Student')}>View Proof</Button>
-                       </DialogTrigger>
-                       <Button variant="outline" size="sm" className="text-green-600 hover:text-green-700" onClick={() => handleApprove(sub.id)}>Approve</Button>
-                       <Button variant="destructive" size="sm" onClick={() => handleReject(sub.id)}>Reject</Button>
+                       <Button variant="outline" size="sm" onClick={() => sub.payment_screenshot_url && handleViewProof(sub.payment_screenshot_url, sub.profiles?.full_name || 'Student')}>View Proof</Button>
+                       <Button variant="outline" size="sm" className="text-green-600 hover:text-green-700" onClick={() => setApprovingSub(sub)}>Approve</Button>
+                       <AlertDialog>
+                         <AlertDialogTrigger asChild>
+                           <Button variant="destructive" size="sm">Reject</Button>
+                         </AlertDialogTrigger>
+                         <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action will reject the subscription request and cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => rejectMutation.mutate(sub.id)} disabled={rejectMutation.isPending}>
+                                {rejectMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Confirm Rejection
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                         </AlertDialogContent>
+                       </AlertDialog>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-            {viewingProof && (
-              <DialogContent className="sm:max-w-[600px]" onInteractOutside={() => setViewingProof(null)} onEscapeKeyDown={() => setViewingProof(null)}>
+
+            <Dialog open={!!viewingProof} onOpenChange={(isOpen) => !isOpen && setViewingProof(null)}>
+              {viewingProof && (
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Payment Proof from {viewingProof.studentName}</DialogTitle>
+                  </DialogHeader>
+                  <div className="mt-4">
+                    <img src={viewingProof.url} alt="Payment Proof" className="w-full h-auto rounded-md" />
+                  </div>
+                </DialogContent>
+              )}
+            </Dialog>
+
+            <Dialog open={!!approvingSub} onOpenChange={(isOpen) => { if (!isOpen) { setApprovingSub(null); form.reset(); } }}>
+              <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Payment Proof from {viewingProof.studentName}</DialogTitle>
+                  <DialogTitle>Approve Subscription</DialogTitle>
+                  <DialogDescription>
+                    Upload proof of payment receipt for {approvingSub?.profiles?.full_name}. This will activate their subscription.
+                  </DialogDescription>
                 </DialogHeader>
-                <div className="mt-4">
-                  <img src={viewingProof.url} alt="Payment Proof" className="w-full h-auto rounded-md" />
-                </div>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onApproveSubmit)} className="space-y-4 pt-4">
+                    <FormField
+                      control={form.control}
+                      name="confirmationProof"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirmation Screenshot</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => field.onChange(e.target.files)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={approveMutation.isPending}>
+                      {approveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Confirm Approval
+                    </Button>
+                  </form>
+                </Form>
               </DialogContent>
-            )}
-          </Dialog>
+            </Dialog>
+          </>
         )}
       </CardContent>
     </Card>
