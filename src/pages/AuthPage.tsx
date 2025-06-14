@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate } from 'react-router-dom';
@@ -12,11 +12,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast as sonnerToast } from "sonner";
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const signUpSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+  role: z.enum(['student', 'mess_owner', 'delivery_personnel'], { required_error: "You must select a role." }),
 });
 
 const signInSchema = z.object({
@@ -36,8 +38,12 @@ const AuthPage = () => {
     register: registerSignUp,
     handleSubmit: handleSubmitSignUp,
     formState: { errors: signUpErrors },
+    control: controlSignUp,
   } = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      role: 'student',
+    },
   });
 
   const {
@@ -63,6 +69,7 @@ const AuthPage = () => {
         options: {
           data: {
             full_name: data.fullName,
+            role: data.role,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
@@ -155,6 +162,34 @@ const AuthPage = () => {
                   <Label htmlFor="signUp-password">Password</Label>
                   <Input id="signUp-password" type="password" {...registerSignUp('password')} />
                   {signUpErrors.password && <p className="text-sm text-destructive">{signUpErrors.password.message}</p>}
+                </div>
+                <div className="space-y-3">
+                  <Label>I am a...</Label>
+                  <Controller
+                    control={controlSignUp}
+                    name="role"
+                    render={({ field }) => (
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col sm:flex-row sm:justify-between pt-1"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="student" id="role-student" />
+                          <Label htmlFor="role-student">Student</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="mess_owner" id="role-mess_owner" />
+                          <Label htmlFor="role-mess_owner">Mess Owner</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="delivery_personnel" id="role-delivery_personnel" />
+                          <Label htmlFor="role-delivery_personnel">Delivery</Label>
+                        </div>
+                      </RadioGroup>
+                    )}
+                  />
+                  {signUpErrors.role && <p className="text-sm text-destructive">{signUpErrors.role.message}</p>}
                 </div>
               </CardContent>
               <CardFooter>

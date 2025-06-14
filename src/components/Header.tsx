@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { UtensilsCrossed, Search, UserCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -91,12 +92,14 @@ const Header = () => {
           >
             Find a Mess
           </Link>
-          <Link
-            to="/add-mess"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            List Your Mess
-          </Link>
+          {(!user || profile?.role === 'mess_owner') && (
+            <Link
+              to="/add-mess"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              List Your Mess
+            </Link>
+          )}
           {/* Future links: "About Us" */}
         </nav>
         <div className="flex items-center space-x-3">

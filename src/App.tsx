@@ -14,6 +14,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import AuthPage from "./pages/AuthPage"; // Import AuthPage
 import { AuthProvider } from "./contexts/AuthContext"; // Import AuthProvider
 import AddMessPage from "./pages/AddMessPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +44,11 @@ const App = () => (
               <Route path="/messes" element={<MessesPage />} />
               <Route path="/mess/:id" element={<MessDetailPage />} />
               <Route path="/auth" element={<AuthPage />} /> {/* Add AuthPage route */}
-              <Route path="/add-mess" element={<AddMessPage />} />
+              
+              <Route element={<ProtectedRoute allowedRoles={['mess_owner']} />}>
+                <Route path="/add-mess" element={<AddMessPage />} />
+              </Route>
+
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
