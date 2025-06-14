@@ -107,6 +107,7 @@ const SubscriptionManagement = () => {
     onSuccess: () => {
       toast.success("Subscription approved successfully!");
       queryClient.invalidateQueries({ queryKey: ['pendingSubscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['activeSubscriptions'] });
       setApprovingSub(null);
     },
     onError: (error: Error) => {

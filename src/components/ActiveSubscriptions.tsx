@@ -14,7 +14,7 @@ const ActiveSubscriptions = () => {
     const { user } = useAuth();
 
     const fetchOwnerMesses = async (ownerId: string): Promise<Mess[]> => {
-        const { data, error } = await supabase.from('messes').select('id').eq('owner_id', ownerId);
+        const { data, error } = await supabase.from('messes').select('*').eq('owner_id', ownerId);
         if (error) throw new Error(error.message);
         return data || [];
     };
