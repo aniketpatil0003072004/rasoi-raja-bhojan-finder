@@ -12,6 +12,7 @@ export type Database = {
       deliveries: {
         Row: {
           created_at: string
+          delivery_date: string
           delivery_food_photo_url: string | null
           delivery_house_photo_url: string | null
           delivery_person_id: string | null
@@ -25,6 +26,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delivery_date?: string
           delivery_food_photo_url?: string | null
           delivery_house_photo_url?: string | null
           delivery_person_id?: string | null
@@ -38,6 +40,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delivery_date?: string
           delivery_food_photo_url?: string | null
           delivery_house_photo_url?: string | null
           delivery_person_id?: string | null

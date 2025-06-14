@@ -5,6 +5,7 @@ export type Menu = Tables<'menus'>;
 export type Subscription = Tables<'subscriptions'>;
 export type Profile = Tables<'profiles'>;
 export type Delivery = Tables<'deliveries'>;
+export type MessDeliveryPersonnel = Tables<'mess_delivery_personnel'>;
 
 // New type for subscriptions with joined data
 export type SubscriptionWithDetails = Subscription & {
