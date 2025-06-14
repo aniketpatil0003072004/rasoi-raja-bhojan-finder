@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SubscriptionWithDetails } from '@/types';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from 'lucide-react';
+import { Info, AlertCircle } from 'lucide-react';
 import { useOwnerSubscriptions } from '@/hooks/useOwnerSubscriptions';
 import PendingSubscriptionsTable from './PendingSubscriptionsTable';
 import ViewSubscriberDetailsDialog from './dialogs/ViewSubscriberDetailsDialog';
@@ -14,7 +13,7 @@ import ViewProofDialog from './dialogs/ViewProofDialog';
 import ApproveSubscriptionDialog from './dialogs/ApproveSubscriptionDialog';
 
 const SubscriptionManagement = () => {
-  const { pendingSubscriptions: subscriptions, isLoading } = useOwnerSubscriptions();
+  const { subscriptions, isLoading, error } = useOwnerSubscriptions('pending_owner_confirmation');
   const [viewingDetails, setViewingDetails] = React.useState<SubscriptionWithDetails | null>(null);
   const [viewingProof, setViewingProof] = React.useState<{ url: string | null; studentName: string | null } | null>(null);
   const [approvingSub, setApprovingSub] = React.useState<SubscriptionWithDetails | null>(null);
@@ -47,6 +46,12 @@ const SubscriptionManagement = () => {
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
           </div>
+        ) : error ? (
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error.message}</AlertDescription>
+            </Alert>
         ) : !subscriptions || subscriptions.length === 0 ? (
           <Alert>
             <Info className="h-4 w-4" />

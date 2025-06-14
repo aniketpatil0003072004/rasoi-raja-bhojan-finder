@@ -27,7 +27,7 @@ const RejectSubscriptionButton: React.FC<RejectSubscriptionButtonProps> = ({ sub
         },
         onSuccess: () => {
             toast.success("Subscription has been rejected.");
-            queryClient.invalidateQueries({ queryKey: ['pendingSubscriptions'] });
+            queryClient.invalidateQueries({ queryKey: ['ownerSubscriptions'] });
         },
         onError: (error: Error) => {
             toast.error("Rejection failed.", { description: error.message });

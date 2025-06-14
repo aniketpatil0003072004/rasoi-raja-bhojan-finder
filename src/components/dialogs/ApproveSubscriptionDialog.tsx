@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -61,8 +60,7 @@ const ApproveSubscriptionDialog: React.FC<ApproveSubscriptionDialogProps> = ({ s
         },
         onSuccess: () => {
             toast.success("Subscription approved successfully!");
-            queryClient.invalidateQueries({ queryKey: ['pendingSubscriptions'] });
-            queryClient.invalidateQueries({ queryKey: ['activeSubscriptions'] });
+            queryClient.invalidateQueries({ queryKey: ['ownerSubscriptions'] });
             onOpenChange(false);
         },
         onError: (error: Error) => {
