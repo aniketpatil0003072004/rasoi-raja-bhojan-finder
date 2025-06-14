@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,49 +11,42 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast as sonnerToast } from "sonner";
 import { useAuth } from '@/contexts/AuthContext';
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp"; // Import InputOTP
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const phoneSchema = z.object({
-  phone: z.string().min(10, { message: 'Phone number must be at least 10 digits.' }).regex(/^\+[1-9]\d{1,14}$/, { message: 'Phone number must be in E.164 format (e.g., +919876543210).' }), // E.164 format
+const signUpSchema = z.object({
+  fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
+  email: z.string().email({ message: "Invalid email address." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
 });
 
-const otpSchema = z.object({
-  otp: z.string().length(6, { message: 'OTP must be 6 digits.' }),
+const signInSchema = z.object({
+  email: z.string().email({ message: "Invalid email address." }),
+  password: z.string().min(1, { message: "Password is required." }),
 });
 
-type PhoneFormValues = z.infer<typeof phoneSchema>;
-type OtpFormValues = z.infer<typeof otpSchema>;
+type SignUpFormValues = z.infer<typeof signUpSchema>;
+type SignInFormValues = z.infer<typeof signInSchema>;
 
 const AuthPage = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phoneNumber, setPhoneNumber] = useState('');
 
   const {
-    register: registerPhone,
-    handleSubmit: handleSubmitPhone,
-    formState: { errors: phoneErrors },
-    watch: watchPhone,
-  } = useForm<PhoneFormValues>({
-    resolver: zodResolver(phoneSchema),
-    defaultValues: {
-      phone: '+91'
-    }
+    register: registerSignUp,
+    handleSubmit: handleSubmitSignUp,
+    formState: { errors: signUpErrors },
+  } = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
   });
 
   const {
-    setValue: setOtpValue, // Using setValue to programmatically update OTP input
-    handleSubmit: handleSubmitOtp,
-    formState: { errors: otpErrors },
-    watch: watchOtp,
-  } = useForm<OtpFormValues>({
-    resolver: zodResolver(otpSchema),
+    register: registerSignIn,
+    handleSubmit: handleSubmitSignIn,
+    formState: { errors: signInErrors },
+  } = useForm<SignInFormValues>({
+    resolver: zodResolver(signInSchema),
   });
-  
-  // Watch for OTP changes to pass to InputOTP
-  const otpValue = watchOtp("otp");
 
   useEffect(() => {
     if (session) {
@@ -60,45 +54,45 @@ const AuthPage = () => {
     }
   }, [session, navigate]);
 
-  const handleSendOtp = async (data: PhoneFormValues) => {
+  const handleSignUp = async (data: SignUpFormValues) => {
     setIsLoading(true);
-    setPhoneNumber(data.phone);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: data.phone,
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            full_name: data.fullName,
+          },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
       });
       if (error) {
         sonnerToast.error(error.message);
       } else {
-        sonnerToast.success('OTP sent to your phone!');
-        setStep('otp');
+        sonnerToast.success('Success! Please check your email to confirm your account.');
       }
     } catch (error) {
-      sonnerToast.error('An unexpected error occurred while sending OTP.');
-      console.error('Send OTP error:', error);
+      sonnerToast.error('An unexpected error occurred during sign-up.');
     }
     setIsLoading(false);
   };
-
-  const handleVerifyOtp = async (data: OtpFormValues) => {
+  
+  const handleSignIn = async (data: SignInFormValues) => {
     setIsLoading(true);
     try {
-      const { data: verifyData, error } = await supabase.auth.verifyOtp({
-        phone: phoneNumber,
-        token: data.otp,
-        type: 'sms', // Handles both signup and login for phone
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
       });
       if (error) {
         sonnerToast.error(error.message);
-      } else if (verifyData.session) {
+      } else {
         sonnerToast.success('Login successful!');
         navigate('/');
-      } else {
-        sonnerToast.error('Could not verify OTP. Please try again.');
       }
     } catch (error) {
-      sonnerToast.error('An unexpected error occurred during OTP verification.');
-      console.error('Verify OTP error:', error);
+      sonnerToast.error('An unexpected error occurred during sign-in.');
     }
     setIsLoading(false);
   };
@@ -107,72 +101,71 @@ const AuthPage = () => {
 
   return (
     <div className="container flex min-h-[calc(100vh-10rem)] items-center justify-center py-12">
-      <Card className="w-[400px]">
-        {step === 'phone' && (
-          <>
+      <Tabs defaultValue="sign-in" className="w-[400px]">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="sign-in">Sign In</TabsTrigger>
+          <TabsTrigger value="sign-up">Sign Up</TabsTrigger>
+        </TabsList>
+        <TabsContent value="sign-in">
+          <Card>
             <CardHeader>
-              <CardTitle>Login / Sign Up with Phone</CardTitle>
-              <CardDescription>Enter your phone number to receive an OTP.</CardDescription>
+              <CardTitle>Welcome Back</CardTitle>
+              <CardDescription>Enter your credentials to access your account.</CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmitPhone(handleSendOtp)}>
+            <form onSubmit={handleSubmitSignIn(handleSignIn)}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" placeholder="+919876543210" {...registerPhone('phone')} />
-                  {phoneErrors.phone && <p className="text-sm text-destructive">{phoneErrors.phone.message}</p>}
-                   <p className="text-xs text-muted-foreground">Use E.164 format (e.g., +919876543210).</p>
+                  <Label htmlFor="signIn-email">Email</Label>
+                  <Input id="signIn-email" type="email" placeholder="m@example.com" {...registerSignIn('email')} />
+                  {signInErrors.email && <p className="text-sm text-destructive">{signInErrors.email.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signIn-password">Password</Label>
+                  <Input id="signIn-password" type="password" {...registerSignIn('password')} />
+                  {signInErrors.password && <p className="text-sm text-destructive">{signInErrors.password.message}</p>}
                 </div>
               </CardContent>
               <CardFooter>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Sending OTP...' : 'Send OTP'}
+                  {isLoading ? 'Signing In...' : 'Sign In'}
                 </Button>
               </CardFooter>
             </form>
-          </>
-        )}
-        {step === 'otp' && (
-          <>
+          </Card>
+        </TabsContent>
+        <TabsContent value="sign-up">
+          <Card>
             <CardHeader>
-              <CardTitle>Enter OTP</CardTitle>
-              <CardDescription>We've sent an OTP to {phoneNumber}.</CardDescription>
+              <CardTitle>Create an Account</CardTitle>
+              <CardDescription>Enter your details to get started.</CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmitOtp(handleVerifyOtp)}>
-              <CardContent className="space-y-4 flex flex-col items-center">
+            <form onSubmit={handleSubmitSignUp(handleSignUp)}>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="otp">One-Time Password</Label>
-                  <InputOTP 
-                    maxLength={6} 
-                    value={otpValue}
-                    onChange={(value) => setOtpValue("otp", value)} // Update form value
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                    </InputOTPGroup>
-                    <InputOTPSeparator />
-                    <InputOTPGroup>
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
-                  {otpErrors.otp && <p className="text-sm text-destructive">{otpErrors.otp.message}</p>}
+                  <Label htmlFor="signUp-fullName">Full Name</Label>
+                  <Input id="signUp-fullName" placeholder="John Doe" {...registerSignUp('fullName')} />
+                  {signUpErrors.fullName && <p className="text-sm text-destructive">{signUpErrors.fullName.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signUp-email">Email</Label>
+                  <Input id="signUp-email" type="email" placeholder="m@example.com" {...registerSignUp('email')} />
+                  {signUpErrors.email && <p className="text-sm text-destructive">{signUpErrors.email.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signUp-password">Password</Label>
+                  <Input id="signUp-password" type="password" {...registerSignUp('password')} />
+                  {signUpErrors.password && <p className="text-sm text-destructive">{signUpErrors.password.message}</p>}
                 </div>
               </CardContent>
-              <CardFooter className="flex flex-col space-y-2">
+              <CardFooter>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Verifying...' : 'Verify OTP'}
-                </Button>
-                <Button variant="link" size="sm" onClick={() => { setStep('phone'); setIsLoading(false); }} disabled={isLoading}>
-                  Change phone number
+                  {isLoading ? 'Creating Account...' : 'Create Account'}
                 </Button>
               </CardFooter>
             </form>
-          </>
-        )}
-      </Card>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

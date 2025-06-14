@@ -32,9 +32,8 @@ const Header = () => {
       if (user && user.id) {
         setProfileLoading(true);
         try {
-          // Using 'as any' to bypass a TypeScript error.
-          // This is needed because the auto-generated types for the database
-          // have not yet been updated with the 'profiles' table.
+          // Using 'as any' to bypass a TypeScript error because the 
+          // auto-generated types have not been updated with the 'profiles' table yet.
           const { data, error } = await (supabase.from('profiles') as any)
             .select('full_name, avatar_url, phone')
             .eq('id', user.id)
@@ -42,13 +41,13 @@ const Header = () => {
 
           if (error) {
             console.error("Error fetching profile:", error);
-            setProfile({ phone: user.phone || null });
+            setProfile(null);
           } else {
             setProfile(data as Profile | null); 
           }
         } catch (e) {
           console.error("Exception fetching profile:", e);
-          setProfile({ phone: user.phone || null });
+          setProfile(null);
         } finally {
           setProfileLoading(false);
         }
@@ -68,7 +67,7 @@ const Header = () => {
     navigate('/');
   };
 
-  const getInitials = (name?: string | null, phone?: string | null) => {
+  const getInitials = (name?: string | null) => {
     if (name) {
       return name
         .split(' ')
@@ -76,19 +75,14 @@ const Header = () => {
         .join('')
         .toUpperCase();
     }
-    // Use user's phone directly from auth if profile.phone is not available
-    const currentPhone = phone || user?.phone;
-    if (currentPhone) {
-      return currentPhone.slice(-2) || "P"; 
+    if (user?.email) {
+      return user.email[0].toUpperCase();
     }
     return "U";
   };
   
-  // Display logic prioritizes profile data, then user data from auth context
-  const displayName = profile?.full_name || profile?.phone || user?.phone || "User";
-  const displayDetail = profile?.full_name && (profile?.phone || user?.phone) 
-    ? (profile?.phone || user?.phone) 
-    : ""; // Simpler: show phone if name exists, otherwise nothing for detail.
+  const displayName = profile?.full_name || user?.email || "User";
+  const displayDetail = (profile?.full_name && user?.email) ? user.email : "";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -120,7 +114,7 @@ const Header = () => {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
-                    <AvatarFallback>{getInitials(profile?.full_name, profile?.phone)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(profile?.full_name)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
