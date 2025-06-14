@@ -1,6 +1,5 @@
-
 import { Link, useNavigate } from "react-router-dom";
-import { UtensilsCrossed, Search, UserCircle, LogOut, LayoutDashboard } from "lucide-react";
+import { UtensilsCrossed, Search, UserCircle, LogOut, LayoutDashboard, BookUser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -138,6 +137,12 @@ const Header = () => {
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
+                  </DropdownMenuItem>
+                )}
+                {profile?.role === 'student' && (
+                  <DropdownMenuItem onClick={() => navigate('/my-subscriptions')}>
+                    <BookUser className="mr-2 h-4 w-4" />
+                    <span>My Subscriptions</span>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
