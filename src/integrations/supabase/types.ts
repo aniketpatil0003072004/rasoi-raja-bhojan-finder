@@ -125,9 +125,10 @@ export type Database = {
           end_date: string
           id: string
           mess_id: string
+          owner_confirmation_screenshot_url: string | null
           payment_screenshot_url: string | null
           start_date: string
-          status: string
+          status: Database["public"]["Enums"]["subscription_status"]
           user_id: string
         }
         Insert: {
@@ -135,9 +136,10 @@ export type Database = {
           end_date: string
           id?: string
           mess_id: string
+          owner_confirmation_screenshot_url?: string | null
           payment_screenshot_url?: string | null
           start_date: string
-          status?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
           user_id: string
         }
         Update: {
@@ -145,9 +147,10 @@ export type Database = {
           end_date?: string
           id?: string
           mess_id?: string
+          owner_confirmation_screenshot_url?: string | null
           payment_screenshot_url?: string | null
           start_date?: string
-          status?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
           user_id?: string
         }
         Relationships: [
@@ -177,6 +180,7 @@ export type Database = {
         | "Friday"
         | "Saturday"
         | "Sunday"
+      subscription_status: "pending_owner_confirmation" | "active" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -302,6 +306,7 @@ export const Constants = {
         "Saturday",
         "Sunday",
       ],
+      subscription_status: ["pending_owner_confirmation", "active", "rejected"],
     },
   },
 } as const

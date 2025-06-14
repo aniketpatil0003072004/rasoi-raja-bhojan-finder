@@ -1,8 +1,8 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Mess, Menu } from "@/types";
+import { Mess, Menu, Profile } from "@/types";
 import { Star, MapPin, IndianRupee, Phone, Clock, Utensils, Truck, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import AddMenuForm from "@/components/AddMenuForm";
+import SubscriptionForm from "@/components/SubscriptionForm";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ const MessDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const [isMenuDialogOpen, setIsMenuDialogOpen] = React.useState(false);
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = React.useState(false);
 
   const fetchMess = async (messId: string): Promise<Mess | null> => {
     const { data, error } = await supabase
@@ -46,6 +48,19 @@ const MessDetailPage = () => {
     return data || [];
   };
 
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    if (error) {
+      console.error("Error fetching profile:", error);
+      return null;
+    }
+    return data;
+  };
+
   const { data: mess, isLoading: isMessLoading, error: messError } = useQuery({
     queryKey: ["mess", id],
     queryFn: () => fetchMess(id!),
@@ -58,6 +73,12 @@ const MessDetailPage = () => {
     enabled: !!id,
   });
 
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: () => fetchProfile(user!.id),
+    enabled: !!user,
+  });
+
   const orderedMenu = React.useMemo(() => {
     if (!menu) return [];
     const dayOrder: Record<string, number> = { "Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6 };
@@ -66,6 +87,7 @@ const MessDetailPage = () => {
 
   const isLoading = isMessLoading || isMenuLoading;
   const isOwner = user && mess && user.id === mess.owner_id;
+  const isStudent = profile?.role === 'student';
 
   if (isLoading) {
     return (
@@ -171,7 +193,33 @@ const MessDetailPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-               <Button className="w-full bg-primary hover:bg-primary/90 text-lg py-6">Subscribe Now</Button>
+               {!user && (
+                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-lg py-6">
+                  <Link to="/auth">Login to Subscribe</Link>
+                </Button>
+               )}
+               {user && isOwner && (
+                <Button className="w-full text-lg py-6" disabled>You are the owner</Button>
+               )}
+               {user && !isOwner && !isStudent && (
+                 <Button className="w-full text-lg py-6" disabled>Only students can subscribe</Button>
+               )}
+               {user && isStudent && (
+                 <Dialog open={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-primary hover:bg-primary/90 text-lg py-6">Subscribe Now</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Subscribe to {mess.name}</DialogTitle>
+                        <DialogDescription>
+                          Upload your payment proof to request a subscription. The owner will verify it.
+                        </DialogDescription>
+                      </DialogHeader>
+                      {id && <SubscriptionForm messId={id} onSuccess={() => setIsSubscriptionDialogOpen(false)} />}
+                    </DialogContent>
+                  </Dialog>
+               )}
                <Button variant="outline" className="w-full">Contact Mess</Button>
             </CardContent>
           </Card>
