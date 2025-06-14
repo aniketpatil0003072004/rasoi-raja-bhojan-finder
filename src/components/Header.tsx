@@ -28,7 +28,7 @@ const Header = () => {
         try {
           const { data, error } = await supabase
             .from('profiles')
-            .select('full_name, avatar_url')
+            .select('*')
             .eq('id', user.id)
             .single();
 

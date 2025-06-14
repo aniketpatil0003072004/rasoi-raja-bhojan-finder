@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -52,7 +51,7 @@ const AddMessForm = () => {
       contact: "",
       operating_hours: "",
       offers_delivery: false,
-      cuisine: [],
+      cuisine: [] as any, // Changed to string to match input, 'any' to satisfy initial type
       image_url: ""
     },
   });
