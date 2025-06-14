@@ -32,9 +32,10 @@ const Header = () => {
       if (user && user.id) {
         setProfileLoading(true);
         try {
-          // Using 'as any' to bypass a TypeScript error because the 
-          // auto-generated types have not been updated with the 'profiles' table yet.
-          const { data, error } = await (supabase.from('profiles') as any)
+          // The type definitions for the 'profiles' table haven't updated yet.
+          // This 'any' cast is a temporary workaround to prevent a build error.
+          const { data, error } = await (supabase as any)
+            .from('profiles')
             .select('full_name, avatar_url, phone')
             .eq('id', user.id)
             .single();
