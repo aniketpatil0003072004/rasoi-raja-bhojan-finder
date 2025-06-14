@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Mess, SubscriptionWithDetails, Subscription } from '@/types';
@@ -6,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import React from 'react';
 
 const fetchOwnerMesses = async (ownerId: string): Promise<Mess[]> => {
-    const { data, error } = await supabase.from('messes').select('id').eq('owner_id', ownerId);
+    const { data, error } = await supabase.from('messes').select('*').eq('owner_id', ownerId);
     if (error) throw new Error(error.message);
     return data || [];
 };
