@@ -16,9 +16,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
 interface Profile {
-  full_name?: string | null; // Can be null
-  avatar_url?: string | null; // Can be null
-  phone?: string | null; // Added phone
+  full_name?: string | null;
+  avatar_url?: string | null;
+  phone?: string | null;
 }
 
 const Header = () => {
@@ -29,13 +29,12 @@ const Header = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (user && user.id) { // Ensure user and user.id exist
+      if (user && user.id) {
         setProfileLoading(true);
         try {
-          // Temporary workaround for TypeScript error when Supabase types are not yet updated
-          // The 'profiles' table might not be in the generated types immediately after migration.
+          // @ts-ignore - Supabase types might not be updated yet with 'profiles' table
           const { data, error } = await supabase
-            .from('profiles' as any) // Cast 'profiles' to any to bypass type checking for the table name
+            .from('profiles') // This line was causing the TS error
             .select('full_name, avatar_url, phone')
             .eq('id', user.id)
             .single();
@@ -43,9 +42,10 @@ const Header = () => {
           if (error) {
             console.error("Error fetching profile:", error);
             // Set a default profile using user's phone if fetching fails
+            // Ensure user.phone is accessed safely
             setProfile({ phone: user.phone || null });
           } else {
-            setProfile(data as Profile); // Cast data to Profile
+            setProfile(data as Profile); 
           }
         } catch (e) {
           console.error("Exception fetching profile:", e);
@@ -65,7 +65,7 @@ const Header = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    setProfile(null); // Clear profile on sign out
+    setProfile(null); 
     navigate('/');
   };
 
@@ -77,18 +77,19 @@ const Header = () => {
         .join('')
         .toUpperCase();
     }
-    if (phone) {
-      // Use last 2 digits of phone as fallback, or 'P' for Phone
-      return phone.slice(-2) || "P"; 
+    // Use user's phone directly from auth if profile.phone is not available
+    const currentPhone = phone || user?.phone;
+    if (currentPhone) {
+      return currentPhone.slice(-2) || "P"; 
     }
-    return "U"; // User
+    return "U";
   };
   
+  // Display logic prioritizes profile data, then user data from auth context
   const displayName = profile?.full_name || profile?.phone || user?.phone || "User";
   const displayDetail = profile?.full_name && (profile?.phone || user?.phone) 
     ? (profile?.phone || user?.phone) 
-    : profile?.full_name ? "" : "";
-
+    : ""; // Simpler: show phone if name exists, otherwise nothing for detail.
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -110,7 +111,7 @@ const Header = () => {
           <Button variant="ghost" size="icon">
             <Search className="h-5 w-5" />
           </Button>
-          {authLoading || (user && profileLoading) ? ( // Show loading if auth is loading OR if user exists and profile is loading
+          {authLoading || (user && profileLoading) ? (
             <Button variant="outline" size="sm" disabled>
               Loading...
             </Button>
@@ -120,7 +121,7 @@ const Header = () => {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
-                    <AvatarFallback>{getInitials(profile?.full_name, profile?.phone || user.phone)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(profile?.full_name, profile?.phone)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -160,3 +161,4 @@ const Header = () => {
 };
 
 export default Header;
+
