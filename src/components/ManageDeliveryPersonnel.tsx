@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPlus, UserX, Search, Loader2, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
@@ -10,57 +10,22 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types';
 import { toast } from 'sonner';
+import { useAvailableDeliveryPersonnel } from '@/hooks/useAvailableDeliveryPersonnel';
 
 const ManageDeliveryPersonnel = () => {
-    const { staff, isLoading, error, messIds } = useMessStaff();
+    const { staff, isLoading: isLoadingStaff, error: staffError, messIds } = useMessStaff();
+    const { data: availablePersonnel, isLoading: isLoadingAvailable, error: availableError } = useAvailableDeliveryPersonnel();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchedUser, setSearchedUser] = useState<Profile | null>(null);
-    const [isSearching, setIsSearching] = useState(false);
-    const [searchMessage, setSearchMessage] = useState<string | null>(null);
-    const [searchMessageType, setSearchMessageType] = useState<'default' | 'destructive'>('default');
-
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!searchTerm) return;
-        setIsSearching(true);
-        setSearchedUser(null);
-        setSearchMessage(null);
-        
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('phone_number', searchTerm)
-            .single();
-
-        setIsSearching(false);
-
-        if (profileError) {
-            setSearchMessageType('destructive');
-            if (profileError.code === 'PGRST116') { // Not found
-                setSearchMessage("No user found with this phone number.");
-            } else {
-                setSearchMessage("An error occurred during search. Please try again.");
-                console.error("Search error:", profileError);
-            }
-        } else if (profileData.role !== 'delivery_personnel') {
-            setSearchMessageType('default');
-            setSearchMessage(`This user is a '${profileData.role}'. Only users with the 'delivery_personnel' role can be added as staff.`);
-        } else {
-            setSearchedUser(profileData);
-        }
-    };
 
     const addStaffMutation = useMutation({
         mutationFn: async (deliveryPersonId: string) => {
             if (messIds.length === 0) throw new Error("You don't own any mess.");
-            // For simplicity, we add the staff to the first mess of the owner.
-            // A dropdown could be added later if an owner has multiple messes.
             const messId = messIds[0];
 
-            const isAlreadyStaff = staff?.some(s => s.delivery_person_id === deliveryPersonId && s.mess_id === messId);
+            const isAlreadyStaff = staff?.some(s => s.delivery_person_id === deliveryPersonId);
             if (isAlreadyStaff) {
-                throw new Error("This person is already part of your staff for this mess.");
+                throw new Error("This person is already part of your staff.");
             }
 
             const { error } = await supabase
@@ -71,8 +36,6 @@ const ManageDeliveryPersonnel = () => {
         },
         onSuccess: () => {
             toast.success("Staff member added successfully!");
-            setSearchedUser(null);
-            setSearchTerm('');
             queryClient.invalidateQueries({ queryKey: ['messStaff'] });
         },
         onError: (err: Error) => {
@@ -99,6 +62,23 @@ const ManageDeliveryPersonnel = () => {
         },
     });
 
+    const personnelToAdd = useMemo(() => {
+        if (!availablePersonnel || !staff) return [];
+        const staffIds = new Set(staff.map(s => s.delivery_person_id));
+        return availablePersonnel.filter(p => !staffIds.has(p.id));
+    }, [availablePersonnel, staff]);
+
+    const filteredPersonnel = useMemo(() => {
+        if (!personnelToAdd) return [];
+        return personnelToAdd.filter(p =>
+            p.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.phone_number?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [personnelToAdd, searchTerm]);
+
+    const isLoading = isLoadingStaff || isLoadingAvailable;
+    const error = staffError || availableError;
+
     return (
         <Card>
             <CardHeader>
@@ -109,52 +89,51 @@ const ManageDeliveryPersonnel = () => {
                 <CardDescription>Add or remove delivery personnel for your mess.</CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSearch} className="flex gap-2 mb-6">
-                    <Input
-                        placeholder="Search by phone number..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        type="tel"
-                        disabled={isSearching}
-                    />
-                    <Button type="submit" disabled={isSearching || !searchTerm}>
-                        {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                        <span className="sr-only">Search</span>
-                    </Button>
-                </form>
-
-                {isSearching && <Skeleton className="h-20 w-full rounded-md" />}
-
-                {searchMessage && !isSearching && !searchedUser && (
-                    <Alert variant={searchMessageType} className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">Available Delivery Personnel</h3>
+                <Input
+                    placeholder="Filter by name or phone..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="mb-4"
+                />
+                {isLoadingAvailable ? (
+                    <Skeleton className="h-20 w-full rounded-md" />
+                ) : availableError ? (
+                    <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Search Result</AlertTitle>
-                        <AlertDescription>{searchMessage}</AlertDescription>
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{availableError.message}</AlertDescription>
                     </Alert>
-                )}
-
-                {searchedUser && (
-                    <div className="border p-4 rounded-md flex justify-between items-center mt-4">
-                        <div>
-                            <p className="font-semibold">{searchedUser.full_name}</p>
-                            <p className="text-sm text-muted-foreground">{searchedUser.phone_number}</p>
-                        </div>
-                        <Button onClick={() => addStaffMutation.mutate(searchedUser.id)} disabled={addStaffMutation.isPending}>
-                            {addStaffMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add to Staff"}
-                        </Button>
+                ) : filteredPersonnel.length > 0 ? (
+                    <div className="space-y-2 max-h-60 overflow-y-auto border p-2 rounded-md">
+                        {filteredPersonnel.map(person => (
+                            <div key={person.id} className="border p-3 rounded-md flex justify-between items-center bg-muted/20">
+                                <div>
+                                    <p className="font-semibold">{person.full_name}</p>
+                                    <p className="text-sm text-muted-foreground">{person.phone_number}</p>
+                                </div>
+                                <Button size="sm" onClick={() => addStaffMutation.mutate(person.id)} disabled={addStaffMutation.isPending}>
+                                    {addStaffMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+                                </Button>
+                            </div>
+                        ))}
                     </div>
+                ) : (
+                     <p className="text-sm text-muted-foreground text-center py-4">
+                        {personnelToAdd.length > 0 && searchTerm ? 'No match found for your filter.' : 'No new delivery personnel available to add.'}
+                    </p>
                 )}
                 
                 <h3 className="text-lg font-semibold mt-6 mb-4">Current Staff</h3>
-                {isLoading ? (
+                {isLoadingStaff ? (
                     <div className="space-y-2">
                         <Skeleton className="h-12 w-full" />
                         <Skeleton className="h-12 w-full" />
                     </div>
-                ) : error ? (
+                ) : staffError ? (
                     <Alert variant="destructive">
                         <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{error.message}</AlertDescription>
+                        <AlertDescription>{staffError.message}</AlertDescription>
                     </Alert>
                 ) : staff && staff.length > 0 ? (
                     <ul className="space-y-2">
