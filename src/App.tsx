@@ -17,6 +17,8 @@ import AddMessPage from "./pages/AddMessPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OwnerDashboardPage from "./pages/OwnerDashboardPage"; // Import new page
 import MySubscriptionsPage from "./pages/MySubscriptionsPage";
+import DeliveryDashboardPage from "./pages/DeliveryDashboardPage";
+import DeliveryDetailsPage from "./pages/DeliveryDetailsPage";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +56,11 @@ const App = () => (
 
               <Route element={<ProtectedRoute allowedRoles={['student']} />}>
                 <Route path="/my-subscriptions" element={<MySubscriptionsPage />} />
+              </Route>
+
+              <Route element={<ProtectedRoute allowedRoles={['delivery_personnel']} />}>
+                <Route path="/delivery-dashboard" element={<DeliveryDashboardPage />} />
+                <Route path="/delivery/:deliveryId" element={<DeliveryDetailsPage />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
