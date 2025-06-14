@@ -2,7 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { UtensilsCrossed, Search, UserCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,14 +10,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"; // Import Dropdown components
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
-import { supabase } from "@/integrations/supabase/client"; // To fetch profile
-import { useState, useEffect } from "react"; // For profile state
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 
 interface Profile {
-  full_name?: string;
-  avatar_url?: string;
+  full_name?: string | null; // Can be null
+  avatar_url?: string | null; // Can be null
+  phone?: string | null; // Added phone
 }
 
 const Header = () => {
@@ -28,24 +29,27 @@ const Header = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (user) {
+      if (user && user.id) { // Ensure user and user.id exist
         setProfileLoading(true);
         try {
+          // Temporary workaround for TypeScript error when Supabase types are not yet updated
+          // The 'profiles' table might not be in the generated types immediately after migration.
           const { data, error } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
+            .from('profiles' as any) // Cast 'profiles' to any to bypass type checking for the table name
+            .select('full_name, avatar_url, phone')
             .eq('id', user.id)
             .single();
 
           if (error) {
             console.error("Error fetching profile:", error);
-            setProfile(null);
+            // Set a default profile using user's phone if fetching fails
+            setProfile({ phone: user.phone || null });
           } else {
-            setProfile(data);
+            setProfile(data as Profile); // Cast data to Profile
           }
         } catch (e) {
           console.error("Exception fetching profile:", e);
-          setProfile(null);
+          setProfile({ phone: user.phone || null });
         } finally {
           setProfileLoading(false);
         }
@@ -54,24 +58,37 @@ const Header = () => {
       }
     };
 
-    if (!authLoading) { // Fetch profile only after auth state is determined
+    if (!authLoading) {
       fetchProfile();
     }
   }, [user, authLoading]);
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/'); // Navigate to home after sign out
+    setProfile(null); // Clear profile on sign out
+    navigate('/');
   };
 
-  const getInitials = (name?: string) => {
-    if (!name) return "NN"; // No Name
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
+  const getInitials = (name?: string | null, phone?: string | null) => {
+    if (name) {
+      return name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase();
+    }
+    if (phone) {
+      // Use last 2 digits of phone as fallback, or 'P' for Phone
+      return phone.slice(-2) || "P"; 
+    }
+    return "U"; // User
   };
+  
+  const displayName = profile?.full_name || profile?.phone || user?.phone || "User";
+  const displayDetail = profile?.full_name && (profile?.phone || user?.phone) 
+    ? (profile?.phone || user?.phone) 
+    : profile?.full_name ? "" : "";
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -93,7 +110,7 @@ const Header = () => {
           <Button variant="ghost" size="icon">
             <Search className="h-5 w-5" />
           </Button>
-          {authLoading || profileLoading ? (
+          {authLoading || (user && profileLoading) ? ( // Show loading if auth is loading OR if user exists and profile is loading
             <Button variant="outline" size="sm" disabled>
               Loading...
             </Button>
@@ -102,8 +119,8 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || user.email} />
-                    <AvatarFallback>{getInitials(profile?.full_name || user.email)}</AvatarFallback>
+                    <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
+                    <AvatarFallback>{getInitials(profile?.full_name, profile?.phone || user.phone)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -111,10 +128,10 @@ const Header = () => {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {profile?.full_name || user.email}
+                      {displayName}
                     </p>
-                    {profile?.full_name && <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
+                    {displayDetail && <p className="text-xs leading-none text-muted-foreground">
+                      {displayDetail}
                     </p>}
                   </div>
                 </DropdownMenuLabel>

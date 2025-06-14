@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -8,167 +8,169 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast as sonnerToast } from "sonner";
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useAuth } from '@/contexts/AuthContext';
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp"; // Import InputOTP
 
-const signUpSchema = z.object({
-  fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Invalid email address.' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+const phoneSchema = z.object({
+  phone: z.string().min(10, { message: 'Phone number must be at least 10 digits.' }).regex(/^\+[1-9]\d{1,14}$/, { message: 'Phone number must be in E.164 format (e.g., +1234567890).' }), // E.164 format
 });
 
-const loginSchema = z.object({
-  email: z.string().email({ message: 'Invalid email address.' }),
-  password: z.string().min(6, { message: 'Password cannot be empty.' }),
+const otpSchema = z.object({
+  otp: z.string().length(6, { message: 'OTP must be 6 digits.' }),
 });
 
-type SignUpFormValues = z.infer<typeof signUpSchema>;
-type LoginFormValues = z.infer<typeof loginSchema>;
+type PhoneFormValues = z.infer<typeof phoneSchema>;
+type OtpFormValues = z.infer<typeof otpSchema>;
 
 const AuthPage = () => {
   const navigate = useNavigate();
-  const { session } = useAuth(); // Get session from context
+  const { session } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   const {
-    register: registerSignUp,
-    handleSubmit: handleSubmitSignUp,
-    formState: { errors: signUpErrors },
-  } = useForm<SignUpFormValues>({
-    resolver: zodResolver(signUpSchema),
+    register: registerPhone,
+    handleSubmit: handleSubmitPhone,
+    formState: { errors: phoneErrors },
+    watch: watchPhone,
+  } = useForm<PhoneFormValues>({
+    resolver: zodResolver(phoneSchema),
   });
 
   const {
-    register: registerLogin,
-    handleSubmit: handleSubmitLogin,
-    formState: { errors: loginErrors },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    setValue: setOtpValue, // Using setValue to programmatically update OTP input
+    handleSubmit: handleSubmitOtp,
+    formState: { errors: otpErrors },
+    watch: watchOtp,
+  } = useForm<OtpFormValues>({
+    resolver: zodResolver(otpSchema),
   });
+  
+  // Watch for OTP changes to pass to InputOTP
+  const otpValue = watchOtp("otp");
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (session) {
       navigate('/'); // Redirect if already logged in
     }
   }, [session, navigate]);
 
-  const handleSignUp = async (data: SignUpFormValues) => {
+  const handleSendOtp = async (data: PhoneFormValues) => {
     setIsLoading(true);
+    setPhoneNumber(data.phone);
     try {
-      const { error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            full_name: data.fullName,
-          },
-          emailRedirectTo: `${window.location.origin}/`,
-        },
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: data.phone,
       });
       if (error) {
         sonnerToast.error(error.message);
       } else {
-        sonnerToast.success('Sign up successful! Please check your email to confirm your account.');
-        // Potentially navigate to a "check your email page" or handle login directly if auto-confirm is on
+        sonnerToast.success('OTP sent to your phone!');
+        setStep('otp');
       }
     } catch (error) {
-      sonnerToast.error('An unexpected error occurred during sign up.');
-      console.error('Sign up error:', error);
+      sonnerToast.error('An unexpected error occurred while sending OTP.');
+      console.error('Send OTP error:', error);
     }
     setIsLoading(false);
   };
 
-  const handleLogin = async (data: LoginFormValues) => {
+  const handleVerifyOtp = async (data: OtpFormValues) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
+      const { data: verifyData, error } = await supabase.auth.verifyOtp({
+        phone: phoneNumber,
+        token: data.otp,
+        type: 'sms', // Handles both signup and login for phone
       });
       if (error) {
         sonnerToast.error(error.message);
-      } else {
+      } else if (verifyData.session) {
         sonnerToast.success('Login successful!');
-        navigate('/'); // Redirect to home page or dashboard
+        navigate('/');
+      } else {
+        sonnerToast.error('Could not verify OTP. Please try again.');
       }
     } catch (error) {
-      sonnerToast.error('An unexpected error occurred during login.');
-      console.error('Login error:', error);
+      sonnerToast.error('An unexpected error occurred during OTP verification.');
+      console.error('Verify OTP error:', error);
     }
     setIsLoading(false);
   };
   
-  if (session) return null; // Don't render if session exists (already handled by useEffect redirect)
+  if (session) return null;
 
   return (
     <div className="container flex min-h-[calc(100vh-10rem)] items-center justify-center py-12">
-      <Tabs defaultValue="login" className="w-[400px]">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
-        </TabsList>
-        <TabsContent value="login">
-          <Card>
+      <Card className="w-[400px]">
+        {step === 'phone' && (
+          <>
             <CardHeader>
-              <CardTitle>Login</CardTitle>
-              <CardDescription>Access your Rasoi Raja account.</CardDescription>
+              <CardTitle>Login / Sign Up with Phone</CardTitle>
+              <CardDescription>Enter your phone number to receive an OTP.</CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmitLogin(handleLogin)}>
+            <form onSubmit={handleSubmitPhone(handleSendOtp)}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input id="login-email" type="email" placeholder="m@example.com" {...registerLogin('email')} />
-                  {loginErrors.email && <p className="text-sm text-destructive">{loginErrors.email.message}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Input id="login-password" type="password" {...registerLogin('password')} />
-                  {loginErrors.password && <p className="text-sm text-destructive">{loginErrors.password.message}</p>}
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input id="phone" type="tel" placeholder="+1234567890" {...registerPhone('phone')} />
+                  {phoneErrors.phone && <p className="text-sm text-destructive">{phoneErrors.phone.message}</p>}
+                   <p className="text-xs text-muted-foreground">Use E.164 format (e.g., +1234567890).</p>
                 </div>
               </CardContent>
               <CardFooter>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Logging in...' : 'Login'}
+                  {isLoading ? 'Sending OTP...' : 'Send OTP'}
                 </Button>
               </CardFooter>
             </form>
-          </Card>
-        </TabsContent>
-        <TabsContent value="signup">
-          <Card>
+          </>
+        )}
+        {step === 'otp' && (
+          <>
             <CardHeader>
-              <CardTitle>Sign Up</CardTitle>
-              <CardDescription>Create your Rasoi Raja account.</CardDescription>
+              <CardTitle>Enter OTP</CardTitle>
+              <CardDescription>We've sent an OTP to {phoneNumber}.</CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmitSignUp(handleSignUp)}>
-              <CardContent className="space-y-4">
+            <form onSubmit={handleSubmitOtp(handleVerifyOtp)}>
+              <CardContent className="space-y-4 flex flex-col items-center">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-fullName">Full Name</Label>
-                  <Input id="signup-fullName" placeholder="John Doe" {...registerSignUp('fullName')} />
-                  {signUpErrors.fullName && <p className="text-sm text-destructive">{signUpErrors.fullName.message}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input id="signup-email" type="email" placeholder="m@example.com" {...registerSignUp('email')} />
-                  {signUpErrors.email && <p className="text-sm text-destructive">{signUpErrors.email.message}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input id="signup-password" type="password" {...registerSignUp('password')} />
-                  {signUpErrors.password && <p className="text-sm text-destructive">{signUpErrors.password.message}</p>}
+                  <Label htmlFor="otp">One-Time Password</Label>
+                  <InputOTP 
+                    maxLength={6} 
+                    value={otpValue}
+                    onChange={(value) => setOtpValue("otp", value)} // Update form value
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                  {otpErrors.otp && <p className="text-sm text-destructive">{otpErrors.otp.message}</p>}
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col space-y-2">
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Signing up...' : 'Sign Up'}
+                  {isLoading ? 'Verifying...' : 'Verify OTP'}
+                </Button>
+                <Button variant="link" size="sm" onClick={() => { setStep('phone'); setIsLoading(false); }} disabled={isLoading}>
+                  Change phone number
                 </Button>
               </CardFooter>
             </form>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          </>
+        )}
+      </Card>
     </div>
   );
 };
