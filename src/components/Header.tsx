@@ -32,18 +32,19 @@ const Header = () => {
       if (user && user.id) {
         setProfileLoading(true);
         try {
-          // @ts-ignore - Supabase types are not yet updated with the 'profiles' table. This is safe.
-          const { data, error } = await supabase
+          // More specific cast to handle the case where Supabase types are not yet updated
+          // This assumes the query will return data matching the Profile structure or an error.
+          const { data, error } = await (supabase
             .from('profiles')
             .select('full_name, avatar_url, phone')
             .eq('id', user.id)
-            .single();
+            .single() as Promise<{ data: Profile | null; error: any; }>);
 
           if (error) {
             console.error("Error fetching profile:", error);
             setProfile({ phone: user.phone || null });
           } else {
-            setProfile(data as Profile | null); 
+            setProfile(data); 
           }
         } catch (e) {
           console.error("Exception fetching profile:", e);
