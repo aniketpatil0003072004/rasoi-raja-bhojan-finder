@@ -9,6 +9,70 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      deliveries: {
+        Row: {
+          created_at: string
+          delivery_food_photo_url: string | null
+          delivery_house_photo_url: string | null
+          delivery_person_id: string | null
+          id: string
+          mess_id: string
+          pickup_food_photo_url: string | null
+          pickup_mess_photo_url: string | null
+          status: Database["public"]["Enums"]["delivery_status"]
+          subscription_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_food_photo_url?: string | null
+          delivery_house_photo_url?: string | null
+          delivery_person_id?: string | null
+          id?: string
+          mess_id: string
+          pickup_food_photo_url?: string | null
+          pickup_mess_photo_url?: string | null
+          status?: Database["public"]["Enums"]["delivery_status"]
+          subscription_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          delivery_food_photo_url?: string | null
+          delivery_house_photo_url?: string | null
+          delivery_person_id?: string | null
+          id?: string
+          mess_id?: string
+          pickup_food_photo_url?: string | null
+          pickup_mess_photo_url?: string | null
+          status?: Database["public"]["Enums"]["delivery_status"]
+          subscription_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliveries_delivery_person_id_fkey"
+            columns: ["delivery_person_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliveries_mess_id_fkey"
+            columns: ["mess_id"]
+            isOneToOne: false
+            referencedRelation: "messes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliveries_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menus: {
         Row: {
           breakfast: string | null
@@ -37,6 +101,39 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "menus_mess_id_fkey"
+            columns: ["mess_id"]
+            isOneToOne: false
+            referencedRelation: "messes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mess_delivery_personnel: {
+        Row: {
+          created_at: string
+          delivery_person_id: string
+          mess_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_person_id: string
+          mess_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_person_id?: string
+          mess_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mess_delivery_personnel_delivery_person_id_fkey"
+            columns: ["delivery_person_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mess_delivery_personnel_mess_id_fkey"
             columns: ["mess_id"]
             isOneToOne: false
             referencedRelation: "messes"
@@ -193,6 +290,12 @@ export type Database = {
         | "Friday"
         | "Saturday"
         | "Sunday"
+      delivery_status:
+        | "pending_assignment"
+        | "assigned"
+        | "out_for_delivery"
+        | "delivered"
+        | "failed"
       subscription_status: "pending_owner_confirmation" | "active" | "rejected"
     }
     CompositeTypes: {
@@ -318,6 +421,13 @@ export const Constants = {
         "Friday",
         "Saturday",
         "Sunday",
+      ],
+      delivery_status: [
+        "pending_assignment",
+        "assigned",
+        "out_for_delivery",
+        "delivered",
+        "failed",
       ],
       subscription_status: ["pending_owner_confirmation", "active", "rejected"],
     },

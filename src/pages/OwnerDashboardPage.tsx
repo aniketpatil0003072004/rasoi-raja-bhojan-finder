@@ -2,6 +2,8 @@
 import React from 'react';
 import SubscriptionManagement from '@/components/SubscriptionManagement';
 import ActiveSubscriptions from '@/components/ActiveSubscriptions';
+import DeliveryManagement from '@/components/DeliveryManagement';
+import ManageDeliveryPersonnel from '@/components/ManageDeliveryPersonnel';
 
 const OwnerDashboardPage = () => {
   return (
@@ -10,6 +12,8 @@ const OwnerDashboardPage = () => {
       <div className="grid gap-6">
         <SubscriptionManagement />
         <ActiveSubscriptions />
+        <DeliveryManagement />
+        <ManageDeliveryPersonnel />
       </div>
     </div>
   );
