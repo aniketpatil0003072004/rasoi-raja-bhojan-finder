@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SubscriptionWithDetails, Subscription } from '@/types';
@@ -9,7 +10,7 @@ const fetchSubscriptionsByStatus = async (messIds: string[], status: Subscriptio
     if (messIds.length === 0) return [];
     const { data, error } = await supabase
         .from('subscriptions')
-        .select('*, profiles(full_name, address, phone_number), messes(name)')
+        .select('*, profiles(full_name, address, phone_number), messes(name, address)')
         .in('mess_id', messIds)
         .eq('status', status);
     if (error) throw new Error(error.message);

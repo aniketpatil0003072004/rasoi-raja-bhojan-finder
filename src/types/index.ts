@@ -14,7 +14,10 @@ export type SubscriptionWithDetails = Subscription & {
     address?: string | null;
     phone_number?: string | null;
   } | null;
-  messes: { name?: string | null } | null;
+  messes: { 
+    name?: string | null;
+    address?: string | null;
+  } | null;
 };
 
 // New type for deliveries with joined data
