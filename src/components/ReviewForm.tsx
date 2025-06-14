@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -43,8 +42,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ messId, onSuccess }) => {
       return;
     }
 
-    const { error } = await supabase
-      .from('reviews')
+    const { error } = await (supabase.from('reviews') as any) // Use 'as any' to bypass stale types
       .insert({
         mess_id: messId,
         user_id: user.id,

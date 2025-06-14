@@ -70,8 +70,7 @@ const MessDetailPage = () => {
   };
 
   const fetchReviews = async (messId: string): Promise<ReviewWithProfile[]> => {
-    const { data, error } = await supabase
-      .from('reviews')
+    const { data, error } = await (supabase.from('reviews') as any) // Use 'as any' to bypass stale types
       .select('*, profiles(full_name, avatar_url)')
       .eq('mess_id', messId)
       .order('created_at', { ascending: false });
@@ -147,6 +146,11 @@ const MessDetailPage = () => {
   const isOwner = user && mess && user.id === mess.owner_id;
   const isStudent = profile?.role === 'student';
   const canReview = isStudent && !!userSubscription;
+
+  const handleReviewSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['reviews', id] });
+    queryClient.invalidateQueries({ queryKey: ['mess', id] });
+  };
 
   if (isLoading) {
     return (
@@ -325,7 +329,7 @@ const MessDetailPage = () => {
               <Separator className="my-6" />
             </div>
           )}
-          <ReviewList reviews={reviews || []} />
+          <ReviewList reviews={(reviews as ReviewWithProfile[]) || []} />
         </CardContent>
       </Card>
 
