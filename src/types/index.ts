@@ -8,6 +8,10 @@ export type Profile = Tables<'profiles'>;
 
 // New type for subscriptions with joined data
 export type SubscriptionWithDetails = Subscription & {
-  profiles: { full_name?: string | null } | null;
+  profiles: { 
+    full_name?: string | null;
+    address?: string | null;
+    phone_number?: string | null;
+  } | null;
   messes: { name?: string | null } | null;
 };

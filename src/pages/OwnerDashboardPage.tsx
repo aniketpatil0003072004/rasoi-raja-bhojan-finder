@@ -1,5 +1,7 @@
+
 import React from 'react';
 import SubscriptionManagement from '@/components/SubscriptionManagement';
+import ActiveSubscriptions from '@/components/ActiveSubscriptions';
 
 const OwnerDashboardPage = () => {
   return (
@@ -7,7 +9,7 @@ const OwnerDashboardPage = () => {
       <h1 className="text-3xl font-bold mb-6">Owner Dashboard</h1>
       <div className="grid gap-6">
         <SubscriptionManagement />
-        {/* Other dashboard components can be added here in the future */}
+        <ActiveSubscriptions />
       </div>
     </div>
   );

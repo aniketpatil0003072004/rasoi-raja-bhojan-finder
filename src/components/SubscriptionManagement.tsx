@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -13,12 +12,13 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info, Loader2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const approvalSchema = z.object({
   confirmationProof: z
@@ -33,6 +33,7 @@ const SubscriptionManagement = () => {
   const queryClient = useQueryClient();
   const [viewingProof, setViewingProof] = React.useState<{ url: string; studentName: string } | null>(null);
   const [approvingSub, setApprovingSub] = React.useState<SubscriptionWithDetails | null>(null);
+  const [viewingDetails, setViewingDetails] = React.useState<SubscriptionWithDetails | null>(null);
 
   const fetchOwnerMesses = async (ownerId: string): Promise<Mess[]> => {
     const { data, error } = await supabase.from('messes').select('*').eq('owner_id', ownerId);
@@ -43,7 +44,7 @@ const SubscriptionManagement = () => {
   const fetchPendingSubscriptions = async (messIds: string[]): Promise<SubscriptionWithDetails[]> => {
     const { data, error } = await supabase
       .from('subscriptions')
-      .select('*, profiles(full_name), messes(name)')
+      .select('*, profiles(full_name, address, phone_number), messes(name)')
       .in('mess_id', messIds)
       .eq('status', 'pending_owner_confirmation');
     if (error) throw new Error(error.message);
@@ -184,6 +185,7 @@ const SubscriptionManagement = () => {
                     <TableCell>{sub.messes?.name || 'N/A'}</TableCell>
                     <TableCell><Badge variant="secondary">{sub.status}</Badge></TableCell>
                     <TableCell className="text-right space-x-2">
+                       <Button variant="outline" size="sm" onClick={() => setViewingDetails(sub)}>View Details</Button>
                        <Button variant="outline" size="sm" onClick={() => sub.payment_screenshot_url && handleViewProof(sub.payment_screenshot_url, sub.profiles?.full_name || 'Student')}>View Proof</Button>
                        <Button variant="outline" size="sm" className="text-green-600 hover:text-green-700" onClick={() => setApprovingSub(sub)}>Approve</Button>
                        <AlertDialog>
@@ -259,6 +261,36 @@ const SubscriptionManagement = () => {
                   </form>
                 </Form>
               </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!viewingDetails} onOpenChange={(isOpen) => !isOpen && setViewingDetails(null)}>
+              {viewingDetails && (
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Subscriber Details</DialogTitle>
+                    <DialogDescription>
+                      Contact information for {viewingDetails.profiles?.full_name || 'the subscriber'}.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="flex items-center gap-4">
+                      <Label htmlFor="name" className="text-right w-20 flex-shrink-0">Name</Label>
+                      <p id="name" className="flex-grow">{viewingDetails.profiles?.full_name}</p>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <Label htmlFor="address" className="text-right w-20 flex-shrink-0 pt-1">Address</Label>
+                      <p id="address" className="flex-grow">{viewingDetails.profiles?.address}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Label htmlFor="phone" className="text-right w-20 flex-shrink-0">Phone</Label>
+                      <p id="phone" className="flex-grow">{viewingDetails.profiles?.phone_number}</p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild><Button type="button" variant="secondary">Close</Button></DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              )}
             </Dialog>
           </>
         )}
