@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserPlus, UserX, Search, Loader2 } from 'lucide-react';
+import { UserPlus, UserX, Search, Loader2, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { useMessStaff } from '@/hooks/useMessStaff';
@@ -18,26 +17,38 @@ const ManageDeliveryPersonnel = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchedUser, setSearchedUser] = useState<Profile | null>(null);
     const [isSearching, setIsSearching] = useState(false);
+    const [searchMessage, setSearchMessage] = useState<string | null>(null);
+    const [searchMessageType, setSearchMessageType] = useState<'default' | 'destructive'>('default');
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!searchTerm) return;
         setIsSearching(true);
         setSearchedUser(null);
+        setSearchMessage(null);
         
         const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('phone_number', searchTerm)
-            .eq('role', 'delivery_personnel')
             .single();
 
+        setIsSearching(false);
+
         if (profileError) {
-            toast.error("Search Failed", { description: "Could not find a delivery person with that phone number, or an error occurred." });
+            setSearchMessageType('destructive');
+            if (profileError.code === 'PGRST116') { // Not found
+                setSearchMessage("No user found with this phone number.");
+            } else {
+                setSearchMessage("An error occurred during search. Please try again.");
+                console.error("Search error:", profileError);
+            }
+        } else if (profileData.role !== 'delivery_personnel') {
+            setSearchMessageType('default');
+            setSearchMessage(`This user is a '${profileData.role}'. Only users with the 'delivery_personnel' role can be added as staff.`);
         } else {
             setSearchedUser(profileData);
         }
-        setIsSearching(false);
     };
 
     const addStaffMutation = useMutation({
@@ -112,10 +123,18 @@ const ManageDeliveryPersonnel = () => {
                     </Button>
                 </form>
 
-                {isSearching && <Skeleton className="h-16 w-full rounded-md" />}
+                {isSearching && <Skeleton className="h-20 w-full rounded-md" />}
+
+                {searchMessage && !isSearching && !searchedUser && (
+                    <Alert variant={searchMessageType} className="mt-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Search Result</AlertTitle>
+                        <AlertDescription>{searchMessage}</AlertDescription>
+                    </Alert>
+                )}
 
                 {searchedUser && (
-                    <div className="border p-4 rounded-md flex justify-between items-center">
+                    <div className="border p-4 rounded-md flex justify-between items-center mt-4">
                         <div>
                             <p className="font-semibold">{searchedUser.full_name}</p>
                             <p className="text-sm text-muted-foreground">{searchedUser.phone_number}</p>
