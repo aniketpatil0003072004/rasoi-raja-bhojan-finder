@@ -40,7 +40,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    // Session and user will be set to null by onAuthStateChange
+    // Explicitly set session and user to null to ensure the UI updates immediately,
+    // without solely relying on the onAuthStateChange listener.
+    setSession(null);
+    setUser(null);
   };
 
   return (
