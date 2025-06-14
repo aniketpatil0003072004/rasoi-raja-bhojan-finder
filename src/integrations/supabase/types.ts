@@ -204,6 +204,7 @@ export type Database = {
           avatar_url: string | null
           full_name: string | null
           id: string
+          mess_id: string | null
           phone_number: string | null
           role: Database["public"]["Enums"]["app_role"]
         }
@@ -212,6 +213,7 @@ export type Database = {
           avatar_url?: string | null
           full_name?: string | null
           id: string
+          mess_id?: string | null
           phone_number?: string | null
           role: Database["public"]["Enums"]["app_role"]
         }
@@ -220,10 +222,19 @@ export type Database = {
           avatar_url?: string | null
           full_name?: string | null
           id?: string
+          mess_id?: string | null
           phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_mess_id_fkey"
+            columns: ["mess_id"]
+            isOneToOne: false
+            referencedRelation: "messes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
