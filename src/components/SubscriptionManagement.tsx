@@ -13,7 +13,7 @@ import ViewProofDialog from './dialogs/ViewProofDialog';
 import ApproveSubscriptionDialog from './dialogs/ApproveSubscriptionDialog';
 
 const SubscriptionManagement = () => {
-  const { subscriptions, isLoading, error } = useOwnerSubscriptions('pending_owner_confirmation');
+  const { subscriptions, isLoading, error: queryError } = useOwnerSubscriptions('pending_owner_confirmation');
   const [viewingDetails, setViewingDetails] = React.useState<SubscriptionWithDetails | null>(null);
   const [viewingProof, setViewingProof] = React.useState<{ url: string | null; studentName: string | null } | null>(null);
   const [approvingSub, setApprovingSub] = React.useState<SubscriptionWithDetails | null>(null);
@@ -22,11 +22,17 @@ const SubscriptionManagement = () => {
     if (!subscription.payment_screenshot_url) return;
     
     setViewingProof({ url: null, studentName: subscription.profiles?.full_name || 'Student' });
+
+    // Defensively remove a leading slash from the path if it exists.
+    const path = subscription.payment_screenshot_url.startsWith('/')
+      ? subscription.payment_screenshot_url.substring(1)
+      : subscription.payment_screenshot_url;
     
-    const { data, error } = await supabase.storage.from('payment_proofs').createSignedUrl(subscription.payment_screenshot_url, 60);
+    const { data, error } = await supabase.storage.from('payment_proofs').createSignedUrl(path, 60);
     
     if (error) {
-      toast.error("Could not load proof.", { description: error.message });
+      console.error("Error creating signed URL for proof:", { message: error.message, path: path });
+      toast.error("Could not load proof.", { description: "There was an issue retrieving the payment proof. Please try again." });
       setViewingProof(null);
     } else {
       setViewingProof({ url: data.signedUrl, studentName: subscription.profiles?.full_name || 'Student' });
@@ -46,11 +52,11 @@ const SubscriptionManagement = () => {
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
           </div>
-        ) : error ? (
+        ) : queryError ? (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error.message}</AlertDescription>
+                <AlertDescription>{queryError.message}</AlertDescription>
             </Alert>
         ) : !subscriptions || subscriptions.length === 0 ? (
           <Alert>
