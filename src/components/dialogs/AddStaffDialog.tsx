@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -19,6 +18,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 interface AddStaffDialogProps {
   messId: string;
@@ -51,7 +51,16 @@ const AddStaffDialog = ({ messId, isOpen, onOpenChange }: AddStaffDialogProps) =
       const { data, error } = await supabase.functions.invoke('create-delivery-personnel', {
         body: { ...values, mess_id: messId },
       })
-      if (error) throw new Error(error.message);
+      if (error) {
+        // This block handles non-2xx server responses to show specific error messages.
+        if (error instanceof FunctionsHttpError) {
+          const errorJson = await error.context.json();
+          throw new Error(errorJson.error || 'An unknown server error occurred.');
+        }
+        // Fallback for other types of errors
+        throw error;
+      }
+      // This handles cases where the server responds with 2xx but includes an error in the body.
       if (data.error) throw new Error(data.error);
       return data;
     },
