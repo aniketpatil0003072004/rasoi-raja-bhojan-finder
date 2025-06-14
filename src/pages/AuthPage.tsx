@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp"; // Import InputOTP
 
 const phoneSchema = z.object({
-  phone: z.string().min(10, { message: 'Phone number must be at least 10 digits.' }).regex(/^\+[1-9]\d{1,14}$/, { message: 'Phone number must be in E.164 format (e.g., +1234567890).' }), // E.164 format
+  phone: z.string().min(10, { message: 'Phone number must be at least 10 digits.' }).regex(/^\+[1-9]\d{1,14}$/, { message: 'Phone number must be in E.164 format (e.g., +919876543210).' }), // E.164 format
 });
 
 const otpSchema = z.object({
@@ -38,6 +37,9 @@ const AuthPage = () => {
     watch: watchPhone,
   } = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneSchema),
+    defaultValues: {
+      phone: '+91'
+    }
   });
 
   const {
@@ -116,9 +118,9 @@ const AuthPage = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" placeholder="+1234567890" {...registerPhone('phone')} />
+                  <Input id="phone" type="tel" placeholder="+919876543210" {...registerPhone('phone')} />
                   {phoneErrors.phone && <p className="text-sm text-destructive">{phoneErrors.phone.message}</p>}
-                   <p className="text-xs text-muted-foreground">Use E.164 format (e.g., +1234567890).</p>
+                   <p className="text-xs text-muted-foreground">Use E.164 format (e.g., +919876543210).</p>
                 </div>
               </CardContent>
               <CardFooter>

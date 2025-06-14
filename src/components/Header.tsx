@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { UtensilsCrossed, Search, UserCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,19 +32,18 @@ const Header = () => {
       if (user && user.id) {
         setProfileLoading(true);
         try {
-          // More specific cast to handle the case where Supabase types are not yet updated
-          // This assumes the query will return data matching the Profile structure or an error.
-          const { data, error } = await (supabase
+          // @ts-ignore - Supabase types are not yet updated with the 'profiles' table. This is safe.
+          const { data, error } = await supabase
             .from('profiles')
             .select('full_name, avatar_url, phone')
             .eq('id', user.id)
-            .single() as Promise<{ data: Profile | null; error: any; }>);
+            .single();
 
           if (error) {
             console.error("Error fetching profile:", error);
             setProfile({ phone: user.phone || null });
           } else {
-            setProfile(data); 
+            setProfile(data as Profile | null); 
           }
         } catch (e) {
           console.error("Exception fetching profile:", e);
