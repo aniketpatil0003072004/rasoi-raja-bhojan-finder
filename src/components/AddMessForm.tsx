@@ -21,6 +21,9 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { TablesInsert } from "@/integrations/supabase/types";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 const messFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
@@ -30,7 +33,14 @@ const messFormSchema = z.object({
   operating_hours: z.string().min(5, "Operating hours are required."),
   offers_delivery: z.boolean().default(false),
   cuisine: z.string().transform(val => val.split(',').map(s => s.trim()).filter(Boolean)),
-  image_url: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
+  image: z.custom<FileList>()
+    .optional()
+    .refine((files) => !files || files.length === 0 || files[0].size <= MAX_FILE_SIZE, {
+        message: `Max file size is 5MB.`,
+    })
+    .refine((files) => !files || files.length === 0 || ACCEPTED_IMAGE_TYPES.includes(files[0].type), {
+        message: ".jpg, .jpeg, .png and .webp files are accepted.",
+    }),
 });
 
 type MessFormValues = z.infer<typeof messFormSchema>;
@@ -52,31 +62,52 @@ const AddMessForm = () => {
       operating_hours: "",
       offers_delivery: false,
       cuisine: "" as any,
-      image_url: ""
     },
   });
 
   const addMessMutation = useMutation({
-    mutationFn: async (newMess: MessFormValues) => {
+    mutationFn: async (values: MessFormValues) => {
       if (!user) throw new Error("You must be logged in to add a mess.");
-      
+
+      let imageUrl: string | null = null;
+      const imageFile = values.image?.[0];
+
+      if (imageFile) {
+        const fileName = `${user.id}/${Date.now()}-${imageFile.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('mess_images')
+          .upload(fileName, imageFile);
+
+        if (uploadError) {
+          throw new Error(`Image Upload Failed: ${uploadError.message}`);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('mess_images')
+          .getPublicUrl(uploadData.path);
+
+        imageUrl = publicUrlData.publicUrl;
+      }
+
+      const messData: Omit<TablesInsert<'messes'>, 'owner_id'> & { owner_id: string } = {
+        name: values.name,
+        description: values.description,
+        address: values.address,
+        monthly_price: values.monthly_price,
+        contact: values.contact,
+        operating_hours: values.operating_hours,
+        offers_delivery: values.offers_delivery,
+        cuisine: values.cuisine,
+        image_url: imageUrl,
+        owner_id: user.id,
+      };
+
       const { data, error } = await supabase
         .from('messes')
-        .insert({
-          name: newMess.name,
-          description: newMess.description,
-          address: newMess.address,
-          monthly_price: newMess.monthly_price,
-          contact: newMess.contact,
-          operating_hours: newMess.operating_hours,
-          offers_delivery: newMess.offers_delivery,
-          cuisine: newMess.cuisine,
-          image_url: newMess.image_url || null,
-          owner_id: user.id
-        })
+        .insert(messData)
         .select()
         .single();
-        
+
       if (error) throw error;
       return data;
     },
@@ -97,7 +128,6 @@ const AddMessForm = () => {
       });
     }
   });
-
 
   function onSubmit(values: MessFormValues) {
     addMessMutation.mutate(values);
@@ -184,14 +214,23 @@ const AddMessForm = () => {
             </FormItem>
           )}
         />
-         <FormField
+        <FormField
           control={form.control}
-          name="image_url"
-          render={({ field }) => (
+          name="image"
+          render={({ field: { onChange, value, ...rest } }) => (
             <FormItem>
-              <FormLabel>Image URL</FormLabel>
-              <FormControl><Input placeholder="https://example.com/image.jpg" {...field} /></FormControl>
-              <FormDescription>Link to an image of your mess or food.</FormDescription>
+              <FormLabel>Mess Image</FormLabel>
+              <FormControl>
+                <Input 
+                  type="file" 
+                  accept="image/png, image/jpeg, image/jpg, image/webp" 
+                  onChange={(e) => {
+                    onChange(e.target.files);
+                  }}
+                  {...rest}
+                />
+              </FormControl>
+              <FormDescription>Upload an image for your mess (optional, max 5MB).</FormDescription>
               <FormMessage />
             </FormItem>
           )}
