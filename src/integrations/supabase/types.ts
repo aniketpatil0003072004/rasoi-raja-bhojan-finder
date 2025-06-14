@@ -296,6 +296,14 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      is_assigned_delivery_person_for_profile: {
+        Args: { p_profile_id: string }
+        Returns: boolean
+      }
+      is_assigned_delivery_person_for_subscription: {
+        Args: { p_subscription_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "student" | "mess_owner" | "delivery_personnel"
