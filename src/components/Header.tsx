@@ -1,5 +1,6 @@
+
 import { Link, useNavigate } from "react-router-dom";
-import { UtensilsCrossed, Search, UserCircle, LogOut, LayoutDashboard, BookUser } from "lucide-react";
+import { UtensilsCrossed, Search, UserCircle, LogOut, LayoutDashboard, BookUser, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -143,6 +144,12 @@ const Header = () => {
                   <DropdownMenuItem onClick={() => navigate('/my-subscriptions')}>
                     <BookUser className="mr-2 h-4 w-4" />
                     <span>My Subscriptions</span>
+                  </DropdownMenuItem>
+                )}
+                {profile?.role === 'delivery_personnel' && (
+                  <DropdownMenuItem onClick={() => navigate('/delivery-dashboard')}>
+                    <Truck className="mr-2 h-4 w-4" />
+                    <span>My Deliveries</span>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
