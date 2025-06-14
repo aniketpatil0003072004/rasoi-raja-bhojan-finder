@@ -62,7 +62,18 @@ const AddMessForm = () => {
       
       const { data, error } = await supabase
         .from('messes')
-        .insert({ ...newMess, owner_id: user.id })
+        .insert({
+          name: newMess.name,
+          description: newMess.description,
+          address: newMess.address,
+          monthly_price: newMess.monthly_price,
+          contact: newMess.contact,
+          operating_hours: newMess.operating_hours,
+          offers_delivery: newMess.offers_delivery,
+          cuisine: newMess.cuisine,
+          image_url: newMess.image_url || null,
+          owner_id: user.id
+        })
         .select()
         .single();
         

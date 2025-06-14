@@ -18,11 +18,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
 import { Menu } from "@/types";
-import { Database, TablesInsert } from "@/integrations/supabase/types";
+import { Database, TablesInsert, Constants } from "@/integrations/supabase/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type DayOfWeek = Database["public"]["Enums"]["day_of_week"];
-const daysOfWeek: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const daysOfWeek = Constants.public.Enums.day_of_week;
 
 const menuDaySchema = z.object({
   day: z.enum(daysOfWeek),
@@ -147,7 +147,7 @@ const AddMenuForm: React.FC<AddMenuFormProps> = ({ messId, onSuccess }) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Breakfast</FormLabel>
-                    <FormControl><Input placeholder="e.g. Poha, Jalebi" {...field} /></FormControl>
+                    <FormControl><Input placeholder="e.g. Poha, Jalebi" {...field} value={field.value ?? ''} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -158,7 +158,7 @@ const AddMenuForm: React.FC<AddMenuFormProps> = ({ messId, onSuccess }) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Lunch</FormLabel>
-                    <FormControl><Input placeholder="e.g. Roti, Sabzi, Dal, Rice" {...field} /></FormControl>
+                    <FormControl><Input placeholder="e.g. Roti, Sabzi, Dal, Rice" {...field} value={field.value ?? ''} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -169,7 +169,7 @@ const AddMenuForm: React.FC<AddMenuFormProps> = ({ messId, onSuccess }) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Dinner</FormLabel>
-                    <FormControl><Input placeholder="e.g. Special Thali" {...field} /></FormControl>
+                    <FormControl><Input placeholder="e.g. Special Thali" {...field} value={field.value ?? ''} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

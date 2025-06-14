@@ -41,8 +41,7 @@ const MessDetailPage = () => {
     const { data, error } = await supabase
       .from("menus")
       .select("*")
-      .eq("mess_id", messId)
-      .order("day");
+      .eq("mess_id", messId);
     if (error) throw new Error(error.message);
     return data || [];
   };
@@ -58,7 +57,13 @@ const MessDetailPage = () => {
     queryFn: () => fetchMenu(id!),
     enabled: !!id,
   });
-  
+
+  const orderedMenu = React.useMemo(() => {
+    if (!menu) return [];
+    const dayOrder: Record<string, number> = { "Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6 };
+    return [...menu].sort((a, b) => dayOrder[a.day] - dayOrder[b.day]);
+  }, [menu]);
+
   const isLoading = isMessLoading || isMenuLoading;
   const isOwner = user && mess && user.id === mess.owner_id;
 
@@ -137,9 +142,9 @@ const MessDetailPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {menu && menu.length > 0 ? (
+              {orderedMenu && orderedMenu.length > 0 ? (
                 <div className="space-y-4">
-                  {menu.map((dayMenu) => (
+                  {orderedMenu.map((dayMenu) => (
                     <div key={dayMenu.day}>
                       <h4 className="font-semibold text-md text-primary mb-1">{dayMenu.day}</h4>
                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 pl-2">
