@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const MySubscriptions = () => {
   const { user } = useAuth();
@@ -110,14 +110,26 @@ const MySubscriptions = () => {
                     <TableCell>{new Date(sub.start_date).toLocaleDateString()}</TableCell>
                     <TableCell>{new Date(sub.end_date).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                      {sub.status === 'active' && sub.owner_confirmation_screenshot_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewConfirmation(sub.owner_confirmation_screenshot_url!, sub.messes?.name || 'Mess')}
-                        >
-                          View Confirmation
-                        </Button>
+                      {sub.status === 'active' ? (
+                        <div className="flex items-center justify-end gap-2">
+                          {sub.owner_confirmation_screenshot_url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewConfirmation(sub.owner_confirmation_screenshot_url!, sub.messes?.name || 'Mess')}
+                            >
+                              View Confirmation
+                            </Button>
+                          )}
+                          <Button asChild size="sm">
+                            <Link to={`/mess/${sub.mess_id}`}>Renew</Link>
+                          </Button>
+                          <Button asChild variant="secondary" size="sm">
+                            <Link to="/messes">Find New Mess</Link>
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm italic">No actions available</span>
                       )}
                     </TableCell>
                   </TableRow>
