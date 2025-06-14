@@ -3,7 +3,6 @@ import React from 'react';
 import SubscriptionManagement from '@/components/SubscriptionManagement';
 import ActiveSubscriptions from '@/components/ActiveSubscriptions';
 import DeliveryManagement from '@/components/DeliveryManagement';
-import ManageDeliveryPersonnel from '@/components/ManageDeliveryPersonnel';
 
 const OwnerDashboardPage = () => {
   return (
@@ -13,10 +12,10 @@ const OwnerDashboardPage = () => {
         <SubscriptionManagement />
         <ActiveSubscriptions />
         <DeliveryManagement />
-        <ManageDeliveryPersonnel />
       </div>
     </div>
   );
 };
 
 export default OwnerDashboardPage;
+    

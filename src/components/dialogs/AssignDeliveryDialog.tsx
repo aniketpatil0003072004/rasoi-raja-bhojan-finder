@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { SubscriptionWithDetails } from '@/types';
-import { useMessStaff } from '@/hooks/useMessStaff';
+import { useAvailableDeliveryPersonnel } from '@/hooks/useAvailableDeliveryPersonnel';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -33,7 +33,7 @@ const formSchema = z.object({
 });
 
 const AssignDeliveryDialog = ({ subscription, isOpen, onOpenChange }: AssignDeliveryDialogProps) => {
-  const { staff, isLoading: isLoadingStaff } = useMessStaff();
+  const { data: availablePersonnel, isLoading: isLoadingPersonnel } = useAvailableDeliveryPersonnel();
   const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -96,21 +96,21 @@ const AssignDeliveryDialog = ({ subscription, isOpen, onOpenChange }: AssignDeli
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Delivery Person</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingStaff || assignMutation.isPending}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingPersonnel || assignMutation.isPending}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a staff member..." />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {staff && staff.length > 0 ? staff.map((member) => (
-                        <SelectItem key={member.delivery_person_id} value={member.delivery_person_id}>
+                      {availablePersonnel && availablePersonnel.length > 0 ? availablePersonnel.map((person) => (
+                        <SelectItem key={person.id} value={person.id}>
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4" />
-                            {member.profiles?.full_name}
+                            {person.full_name}
                           </div>
                         </SelectItem>
-                      )) : <p className="p-2 text-sm text-muted-foreground">No staff found.</p>}
+                      )) : <p className="p-2 text-sm text-muted-foreground">No delivery personnel found.</p>}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -123,7 +123,7 @@ const AssignDeliveryDialog = ({ subscription, isOpen, onOpenChange }: AssignDeli
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={isLoadingStaff || assignMutation.isPending}>
+              <Button type="submit" disabled={isLoadingPersonnel || assignMutation.isPending}>
                 {assignMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Confirm Assignment
               </Button>
@@ -136,3 +136,4 @@ const AssignDeliveryDialog = ({ subscription, isOpen, onOpenChange }: AssignDeli
 };
 
 export default AssignDeliveryDialog;
+    
