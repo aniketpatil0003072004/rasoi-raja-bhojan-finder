@@ -1,6 +1,7 @@
+
 import React from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Mess, Menu, Profile, Subscription } from "@/types";
 import { Star, MapPin, IndianRupee, Phone, Clock, Utensils, Truck, CheckCircle, XCircle } from "lucide-react";
@@ -24,7 +25,6 @@ import {
 const MessDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [isMenuDialogOpen, setIsMenuDialogOpen] = React.useState(false);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = React.useState(false);
   const [isContactDialogOpen, setIsContactDialogOpen] = React.useState(false);
@@ -228,7 +228,7 @@ const MessDetailPage = () => {
                {user && !isOwner && !isStudent && (
                  <Button className="w-full text-lg py-6" disabled>Only students can subscribe</Button>
                )}
-               {user && isStudent && (
+               {user && isStudent && !userSubscription && (
                  <Dialog open={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen}>
                     <DialogTrigger asChild>
                       <Button className="w-full bg-primary hover:bg-primary/90 text-lg py-6">Subscribe Now</Button>
@@ -243,6 +243,12 @@ const MessDetailPage = () => {
                       {id && <SubscriptionForm messId={id} onSuccess={() => setIsSubscriptionDialogOpen(false)} />}
                     </DialogContent>
                   </Dialog>
+               )}
+               {user && isStudent && userSubscription && (
+                  <Button className="w-full bg-green-500 hover:bg-green-600 text-lg py-6" disabled>
+                    <CheckCircle className="mr-2" />
+                    Subscribed
+                  </Button>
                )}
                <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
                 <DialogTrigger asChild>
@@ -301,4 +307,3 @@ const MessDetailPage = () => {
 };
 
 export default MessDetailPage;
-</lov-write>
