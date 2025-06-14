@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { UtensilsCrossed, Search, UserCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,12 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-
-interface Profile {
-  full_name?: string | null;
-  avatar_url?: string | null;
-  phone?: string | null;
-}
+import { Profile } from "@/types";
 
 const Header = () => {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -32,11 +26,9 @@ const Header = () => {
       if (user && user.id) {
         setProfileLoading(true);
         try {
-          // The type definitions for the 'profiles' table haven't updated yet.
-          // This 'any' cast is a temporary workaround to prevent a build error.
-          const { data, error } = await (supabase as any)
+          const { data, error } = await supabase
             .from('profiles')
-            .select('full_name, avatar_url, phone')
+            .select('full_name, avatar_url')
             .eq('id', user.id)
             .single();
 
@@ -44,7 +36,7 @@ const Header = () => {
             console.error("Error fetching profile:", error);
             setProfile(null);
           } else {
-            setProfile(data as Profile | null); 
+            setProfile(data);
           }
         } catch (e) {
           console.error("Exception fetching profile:", e);
@@ -99,7 +91,13 @@ const Header = () => {
           >
             Find a Mess
           </Link>
-          {/* Future links: "List Your Mess", "About Us" */}
+          <Link
+            to="/add-mess"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            List Your Mess
+          </Link>
+          {/* Future links: "About Us" */}
         </nav>
         <div className="flex items-center space-x-3">
           <Button variant="ghost" size="icon">
