@@ -17,6 +17,7 @@ import AddMessPage from "./pages/AddMessPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OwnerDashboardPage from "./pages/OwnerDashboardPage"; // Import new page
 import MySubscriptionsPage from "./pages/MySubscriptionsPage";
+import StudentDeliveryTrackingPage from "./pages/StudentDeliveryTrackingPage";
 import DeliveryDashboardPage from "./pages/DeliveryDashboardPage";
 import DeliveryDetailsPage from "./pages/DeliveryDetailsPage";
 
@@ -56,6 +57,7 @@ const App = () => (
 
               <Route element={<ProtectedRoute allowedRoles={['student']} />}>
                 <Route path="/my-subscriptions" element={<MySubscriptionsPage />} />
+                <Route path="/my-deliveries" element={<StudentDeliveryTrackingPage />} />
               </Route>
 
               <Route element={<ProtectedRoute allowedRoles={['delivery_personnel']} />}>

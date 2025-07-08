@@ -9,6 +9,9 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ArrowDown, ArrowUp } from 'lucide-react';
 import UploadDeliveryProof from '@/components/UploadDeliveryProof';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import DeliveryStatusTracker from '@/components/DeliveryStatusTracker';
+import DeliveryStatusUpdater from '@/components/DeliveryStatusUpdater';
+import { useAuth } from '@/contexts/AuthContext';
 
 const fetchDeliveryDetails = async (deliveryId: string) => {
     const { data, error } = await supabase
@@ -23,7 +26,8 @@ const fetchDeliveryDetails = async (deliveryId: string) => {
             ),
             messes (
                 name,
-                address
+                address,
+                owner_id
             )
         `)
         .eq('id', deliveryId)
@@ -38,6 +42,7 @@ const fetchDeliveryDetails = async (deliveryId: string) => {
 
 const DeliveryDetailsPage = () => {
     const { deliveryId } = useParams<{ deliveryId: string }>();
+    const { user } = useAuth();
 
     const { data: delivery, isLoading, error, refetch } = useQuery({
         queryKey: ['deliveryDetails', deliveryId],
@@ -75,9 +80,20 @@ const DeliveryDetailsPage = () => {
     const studentName = delivery.subscriptions?.profiles?.full_name || 'Student';
 
     return (
-        <div className="container py-8">
-            <h1 className="text-3xl font-bold mb-2">Delivery Details</h1>
-            <p className="text-muted-foreground mb-6">Status: <span className="font-semibold capitalize">{delivery.status.replace(/_/g, ' ')}</span></p>
+        <div className="container py-8 space-y-8">
+            <div>
+                <h1 className="text-3xl font-bold mb-2">Delivery Details</h1>
+                <p className="text-muted-foreground">Track your delivery progress and upload proof photos</p>
+            </div>
+
+            {/* Status Tracker - Always visible for students and delivery personnel */}
+            <DeliveryStatusTracker delivery={delivery} />
+
+            {/* Status Updater - Only for delivery personnel and mess owners */}
+            {(delivery.delivery_person_id === user?.id || 
+              delivery.messes?.owner_id === user?.id) && (
+                <DeliveryStatusUpdater delivery={delivery} onUpdate={refetch} />
+            )}
 
             <div className="grid md:grid-cols-2 gap-8">
                 <Card>
