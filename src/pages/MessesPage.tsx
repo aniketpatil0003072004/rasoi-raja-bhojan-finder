@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Mess } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMemo, useState } from "react";
 
 const MessesPage = () => {
   const fetchMesses = async (): Promise<Mess[]> => {
@@ -20,6 +21,18 @@ const MessesPage = () => {
     queryFn: fetchMesses,
   });
 
+  const [search, setSearch] = useState("");
+  const filteredMesses = useMemo(() => {
+    if (!messes) return [] as Mess[];
+    const q = search.trim().toLowerCase();
+    if (!q) return messes;
+    return messes.filter((m) =>
+      (m.name?.toLowerCase().includes(q)) ||
+      (m.address?.toLowerCase().includes(q)) ||
+      (Array.isArray(m.cuisine) && m.cuisine.some((c) => c?.toLowerCase().includes(q)))
+    );
+  }, [messes, search]);
+
   return (
     <div className="container py-8">
       <div className="mb-8 text-center">
@@ -28,7 +41,14 @@ const MessesPage = () => {
       </div>
       
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <Input placeholder="Search by name or location..." className="flex-grow" />
+        <Input
+          type="search"
+          placeholder="Search by name, cuisine, or location..."
+          aria-label="Search messes"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-grow"
+        />
         <Button variant="outline">
           <Filter className="w-4 h-4 mr-2" />
           Filters
@@ -54,15 +74,15 @@ const MessesPage = () => {
         <div className="text-center py-10">
           <p className="text-xl text-destructive">Error fetching messes: {(error as Error).message}</p>
         </div>
-      ) : messes && messes.length > 0 ? (
+      ) : messes && filteredMesses.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {messes.map((mess) => (
+          {filteredMesses.map((mess) => (
             <MessCard key={mess.id} mess={mess} />
           ))}
         </div>
       ) : (
          <div className="text-center py-10">
-            <p className="text-xl text-muted-foreground">No messes found. Why not be the first to list one?</p>
+            <p className="text-xl text-muted-foreground">{search ? 'No messes match your search.' : 'No messes found. Why not be the first to list one?'}</p>
           </div>
       )}
     </div>
