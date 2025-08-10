@@ -42,6 +42,12 @@ const MessesPage = () => {
     });
   }, [messes, debouncedSearch]);
 
+  useEffect(() => {
+    // Debug in published build
+    // eslint-disable-next-line no-console
+    console.debug('[MessesPage] search:', debouncedSearch, 'messes:', messes?.length ?? 0, 'filtered:', filteredMesses.length);
+  }, [debouncedSearch, messes, filteredMesses]);
+
   return (
     <div className="container py-8">
       <div className="mb-8 text-center">
@@ -56,6 +62,10 @@ const MessesPage = () => {
           aria-label="Search messes"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onInput={(e) => setSearch((e.target as HTMLInputElement).value)}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
           className="flex-grow"
         />
         <Button variant="outline">
