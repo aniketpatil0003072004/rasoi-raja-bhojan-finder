@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Mess } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const MessesPage = () => {
   const fetchMesses = async (): Promise<Mess[]> => {
@@ -22,16 +22,25 @@ const MessesPage = () => {
   });
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 200);
+    return () => clearTimeout(id);
+  }, [search]);
+
   const filteredMesses = useMemo(() => {
     if (!messes) return [] as Mess[];
-    const q = search.trim().toLowerCase();
+    const normalize = (s?: string | null) => (s ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+    const q = normalize(debouncedSearch);
     if (!q) return messes;
-    return messes.filter((m) =>
-      (m.name?.toLowerCase().includes(q)) ||
-      (m.address?.toLowerCase().includes(q)) ||
-      (Array.isArray(m.cuisine) && m.cuisine.some((c) => c?.toLowerCase().includes(q)))
-    );
-  }, [messes, search]);
+    return messes.filter((m) => {
+      const name = normalize(m.name);
+      const address = normalize(m.address);
+      const cuisineText = Array.isArray(m.cuisine) ? normalize(m.cuisine.join(" ")) : "";
+      return name.includes(q) || address.includes(q) || cuisineText.includes(q);
+    });
+  }, [messes, debouncedSearch]);
 
   return (
     <div className="container py-8">
