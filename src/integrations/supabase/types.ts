@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -209,6 +209,10 @@ export type Database = {
           offers_delivery: boolean | null
           operating_hours: string | null
           owner_id: string | null
+          price_1_month: number | null
+          price_2_months: number | null
+          price_3_months: number | null
+          price_6_months: number | null
           rating: number | null
           review_count: number | null
         }
@@ -226,6 +230,10 @@ export type Database = {
           offers_delivery?: boolean | null
           operating_hours?: string | null
           owner_id?: string | null
+          price_1_month?: number | null
+          price_2_months?: number | null
+          price_3_months?: number | null
+          price_6_months?: number | null
           rating?: number | null
           review_count?: number | null
         }
@@ -243,6 +251,10 @@ export type Database = {
           offers_delivery?: boolean | null
           operating_hours?: string | null
           owner_id?: string | null
+          price_1_month?: number | null
+          price_2_months?: number | null
+          price_3_months?: number | null
+          price_6_months?: number | null
           rating?: number | null
           review_count?: number | null
         }
@@ -252,6 +264,7 @@ export type Database = {
         Row: {
           address: string | null
           avatar_url: string | null
+          email: string | null
           full_name: string | null
           id: string
           mess_id: string | null
@@ -261,6 +274,7 @@ export type Database = {
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          email?: string | null
           full_name?: string | null
           id: string
           mess_id?: string | null
@@ -270,6 +284,7 @@ export type Database = {
         Update: {
           address?: string | null
           avatar_url?: string | null
+          email?: string | null
           full_name?: string | null
           id?: string
           mess_id?: string | null
@@ -342,6 +357,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_delivery_person_to_mess: {
+        Args: { p_email: string; p_mess_id: string }
+        Returns: boolean
+      }
+      get_delivery_person_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          email: string
+          full_name: string
+          id: string
+          phone_number: string
+        }[]
+      }
       get_user_role: {
         Args: { p_user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
