@@ -361,6 +361,10 @@ export type Database = {
         Args: { p_email: string; p_mess_id: string }
         Returns: boolean
       }
+      can_view_delivery_contact: {
+        Args: { p_profile_id: string }
+        Returns: boolean
+      }
       get_delivery_person_by_email: {
         Args: { p_email: string }
         Returns: {
