@@ -3,7 +3,6 @@ import React from 'react';
 import SubscriptionManagement from '@/components/SubscriptionManagement';
 import ActiveSubscriptions from '@/components/ActiveSubscriptions';
 import DeliveryManagement from '@/components/DeliveryManagement';
-import StaffManagement from '@/components/StaffManagement';
 import MessManagement from '@/components/MessManagement';
 
 const OwnerDashboardPage = () => {
@@ -15,7 +14,6 @@ const OwnerDashboardPage = () => {
         <SubscriptionManagement />
         <ActiveSubscriptions />
         <DeliveryManagement />
-        <StaffManagement />
       </div>
     </div>
   );
