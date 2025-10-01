@@ -13,6 +13,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MealSkipForm } from './MealSkipForm';
+import { MealSkipsList } from './MealSkipsList';
 
 const MySubscriptions = () => {
   const { user } = useAuth();
@@ -146,6 +149,40 @@ const MySubscriptions = () => {
                 ))}
               </TableBody>
             </Table>
+
+            {/* Meal Skip Management for Active Subscriptions */}
+            {subscriptions.some(sub => sub.status === 'active') && (
+              <div className="mt-8 space-y-4">
+                <h3 className="text-lg font-semibold">Manage Meal Skips</h3>
+                <Tabs defaultValue={subscriptions.find(sub => sub.status === 'active')?.id || ''} className="w-full">
+                  <TabsList className="w-full overflow-x-auto flex-wrap h-auto">
+                    {subscriptions.filter(sub => sub.status === 'active').map(sub => (
+                      <TabsTrigger key={sub.id} value={sub.id}>
+                        {sub.messes?.name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  {subscriptions.filter(sub => sub.status === 'active').map(sub => (
+                    <TabsContent key={sub.id} value={sub.id} className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-medium mb-2">Skip a Meal</h4>
+                          <MealSkipForm 
+                            subscriptionId={sub.id} 
+                            startDate={sub.start_date}
+                            endDate={sub.end_date}
+                          />
+                        </div>
+                        <div>
+                          <h4 className="font-medium mb-2">Your Skipped Meals</h4>
+                          <MealSkipsList subscriptionId={sub.id} />
+                        </div>
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </div>
+            )}
 
             <Dialog open={!!viewingConfirmation} onOpenChange={(isOpen) => !isOpen && setViewingConfirmation(null)}>
               {viewingConfirmation && (

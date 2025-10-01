@@ -126,6 +126,41 @@ export type Database = {
           },
         ]
       }
+      meal_skips: {
+        Row: {
+          created_at: string | null
+          id: string
+          meal_type: Database["public"]["Enums"]["meal_type"]
+          reason: string | null
+          skip_date: string
+          subscription_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          meal_type: Database["public"]["Enums"]["meal_type"]
+          reason?: string | null
+          skip_date: string
+          subscription_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          meal_type?: Database["public"]["Enums"]["meal_type"]
+          reason?: string | null
+          skip_date?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_skips_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menus: {
         Row: {
           breakfast: string | null
@@ -412,6 +447,7 @@ export type Database = {
         | "food_preparing"
         | "food_ready"
         | "picked_up"
+      meal_type: "breakfast" | "lunch" | "dinner"
       subscription_status: "pending_owner_confirmation" | "active" | "rejected"
     }
     CompositeTypes: {
@@ -560,6 +596,7 @@ export const Constants = {
         "food_ready",
         "picked_up",
       ],
+      meal_type: ["breakfast", "lunch", "dinner"],
       subscription_status: ["pending_owner_confirmation", "active", "rejected"],
     },
   },

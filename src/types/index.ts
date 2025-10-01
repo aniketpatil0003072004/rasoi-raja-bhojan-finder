@@ -7,6 +7,7 @@ export type Profile = Tables<'profiles'>;
 export type Delivery = Tables<'deliveries'>;
 export type MessDeliveryPersonnel = Tables<'mess_delivery_personnel'>;
 export type DeliveryNotification = Tables<'delivery_notifications'>;
+export type MealSkip = Tables<'meal_skips'>;
 
 // New type for subscriptions with joined data
 export type SubscriptionWithDetails = Subscription & {
@@ -58,4 +59,11 @@ export const DELIVERY_STATUS_COLORS = {
   out_for_delivery: 'bg-indigo-100 text-indigo-800',
   delivered: 'bg-green-100 text-green-800',
   failed: 'bg-red-100 text-red-800'
+} as const;
+
+// Meal type labels
+export const MEAL_TYPE_LABELS = {
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  dinner: 'Dinner'
 } as const;
