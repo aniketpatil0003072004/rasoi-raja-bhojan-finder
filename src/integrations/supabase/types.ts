@@ -309,6 +309,8 @@ export type Database = {
           mess_id: string
           owner_confirmation_screenshot_url: string | null
           payment_screenshot_url: string | null
+          plan_duration_months: number | null
+          plan_price: number | null
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]
           user_id: string
@@ -320,6 +322,8 @@ export type Database = {
           mess_id: string
           owner_confirmation_screenshot_url?: string | null
           payment_screenshot_url?: string | null
+          plan_duration_months?: number | null
+          plan_price?: number | null
           start_date: string
           status?: Database["public"]["Enums"]["subscription_status"]
           user_id: string
@@ -331,6 +335,8 @@ export type Database = {
           mess_id?: string
           owner_confirmation_screenshot_url?: string | null
           payment_screenshot_url?: string | null
+          plan_duration_months?: number | null
+          plan_price?: number | null
           start_date?: string
           status?: Database["public"]["Enums"]["subscription_status"]
           user_id?: string

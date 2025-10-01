@@ -94,6 +94,8 @@ const MySubscriptions = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Mess</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Price</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Start Date</TableHead>
                   <TableHead>End Date</TableHead>
@@ -104,6 +106,14 @@ const MySubscriptions = () => {
                 {subscriptions.map((sub) => (
                   <TableRow key={sub.id}>
                     <TableCell className="font-medium">{sub.messes?.name || 'N/A'}</TableCell>
+                    <TableCell>
+                      {sub.plan_duration_months 
+                        ? `${sub.plan_duration_months} ${sub.plan_duration_months === 1 ? 'Month' : 'Months'}`
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {sub.plan_price ? `₹${sub.plan_price}` : 'N/A'}
+                    </TableCell>
                     <TableCell>
                       {getStatusBadge(sub.status)}
                     </TableCell>

@@ -20,11 +20,14 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Mess } from '@/types';
 
 const subscriptionSchema = z.object({
   fullName: z.string().min(1, 'Full name is required.'),
   address: z.string().min(1, 'Address is required.'),
   phoneNumber: z.string().min(1, 'Phone number is required.'),
+  planDuration: z.string().min(1, 'Please select a plan duration.'),
   paymentProof: z
     .instanceof(FileList)
     .refine((files) => files !== undefined && files.length > 0, 'Payment proof is required.')
@@ -43,12 +46,21 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ messId, onSuccess }
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const fetchProfile = async () => {
+const fetchProfile = async () => {
     if (!user) return null;
     const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
     if (error && error.code !== 'PGRST116') {
       console.error("Error fetching profile:", error);
       toast.error("Could not load your profile data.");
+    }
+    return data;
+  };
+
+  const fetchMess = async () => {
+    const { data, error } = await supabase.from('messes').select('*').eq('id', messId).single();
+    if (error) {
+      console.error("Error fetching mess:", error);
+      toast.error("Could not load mess data.");
     }
     return data;
   };
@@ -59,12 +71,18 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ messId, onSuccess }
     enabled: !!user,
   });
 
+  const { data: mess, isLoading: isMessLoading } = useQuery({
+    queryKey: ['mess', messId],
+    queryFn: fetchMess,
+  });
+
   const form = useForm<SubscriptionFormValues>({
     resolver: zodResolver(subscriptionSchema),
     defaultValues: {
       fullName: '',
       address: '',
       phoneNumber: '',
+      planDuration: '',
     },
   });
 
@@ -74,9 +92,20 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ messId, onSuccess }
         fullName: profile.full_name || '',
         address: profile.address || '',
         phoneNumber: profile.phone_number || '',
+        planDuration: '',
       });
     }
   }, [profile, form]);
+
+  const availablePlans = React.useMemo(() => {
+    if (!mess) return [];
+    const plans = [];
+    if (mess.price_1_month) plans.push({ duration: 1, price: mess.price_1_month });
+    if (mess.price_2_months) plans.push({ duration: 2, price: mess.price_2_months });
+    if (mess.price_3_months) plans.push({ duration: 3, price: mess.price_3_months });
+    if (mess.price_6_months) plans.push({ duration: 6, price: mess.price_6_months });
+    return plans;
+  }, [mess]);
 
   const onSubmit = async (values: SubscriptionFormValues) => {
     if (!user) {
@@ -119,9 +148,18 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ messId, onSuccess }
       return;
     }
 
+    const planDurationMonths = parseInt(values.planDuration);
+    const selectedPlan = availablePlans.find(p => p.duration === planDurationMonths);
+    
+    if (!selectedPlan) {
+      toast.error('Invalid plan selected.');
+      setIsSubmitting(false);
+      return;
+    }
+
     const startDate = new Date();
     const endDate = new Date();
-    endDate.setMonth(startDate.getMonth() + 1);
+    endDate.setMonth(startDate.getMonth() + planDurationMonths);
 
     const { error: subscriptionError } = await supabase.from('subscriptions').insert({
       user_id: user.id,
@@ -130,6 +168,8 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ messId, onSuccess }
       end_date: endDate.toISOString(),
       payment_screenshot_url: uploadData.path,
       status: 'pending_owner_confirmation',
+      plan_duration_months: planDurationMonths,
+      plan_price: selectedPlan.price,
     });
 
     if (subscriptionError) {
@@ -146,7 +186,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ messId, onSuccess }
     setIsSubmitting(false);
   };
 
-  if (isProfileLoading) {
+  if (isProfileLoading || isMessLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-full" />
@@ -196,6 +236,34 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ messId, onSuccess }
               <FormControl>
                 <Input placeholder="Your phone number" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="planDuration"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Select Plan</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose subscription duration" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {availablePlans.length === 0 ? (
+                    <SelectItem value="none" disabled>No plans available</SelectItem>
+                  ) : (
+                    availablePlans.map((plan) => (
+                      <SelectItem key={plan.duration} value={plan.duration.toString()}>
+                        {plan.duration} {plan.duration === 1 ? 'Month' : 'Months'} - ₹{plan.price}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

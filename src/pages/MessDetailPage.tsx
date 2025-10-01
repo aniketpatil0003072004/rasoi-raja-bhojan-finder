@@ -211,12 +211,48 @@ const MessDetailPage = () => {
         <div className="md:col-span-1 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl text-center text-green-600 flex items-center justify-center">
-                <IndianRupee className="w-7 h-7 mr-1" />{mess.monthly_price}
-                <span className="text-sm text-muted-foreground ml-1">/month</span>
-              </CardTitle>
+              <CardTitle className="text-lg">Subscription Plans</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div className="space-y-2">
+                {mess.price_1_month && (
+                  <div className="flex justify-between items-center p-2 rounded border">
+                    <span className="font-medium">1 Month</span>
+                    <span className="text-green-600 font-semibold flex items-center">
+                      <IndianRupee className="w-4 h-4" />
+                      {mess.price_1_month}
+                    </span>
+                  </div>
+                )}
+                {mess.price_2_months && (
+                  <div className="flex justify-between items-center p-2 rounded border">
+                    <span className="font-medium">2 Months</span>
+                    <span className="text-green-600 font-semibold flex items-center">
+                      <IndianRupee className="w-4 h-4" />
+                      {mess.price_2_months}
+                    </span>
+                  </div>
+                )}
+                {mess.price_3_months && (
+                  <div className="flex justify-between items-center p-2 rounded border">
+                    <span className="font-medium">3 Months</span>
+                    <span className="text-green-600 font-semibold flex items-center">
+                      <IndianRupee className="w-4 h-4" />
+                      {mess.price_3_months}
+                    </span>
+                  </div>
+                )}
+                {mess.price_6_months && (
+                  <div className="flex justify-between items-center p-2 rounded border">
+                    <span className="font-medium">6 Months</span>
+                    <span className="text-green-600 font-semibold flex items-center">
+                      <IndianRupee className="w-4 h-4" />
+                      {mess.price_6_months}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <Separator className="my-3" />
                {!user && (
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-lg py-6">
                   <Link to="/auth">Login to Subscribe</Link>
