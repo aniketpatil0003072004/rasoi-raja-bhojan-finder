@@ -10,6 +10,8 @@ type MealSkipWithDetails = MealSkip & {
   subscriptions: {
     profiles: {
       full_name: string | null;
+      address: string | null;
+      phone_number: string | null;
     } | null;
   } | null;
 };
@@ -28,7 +30,7 @@ export const OwnerMealSkipsView = () => {
           *,
           subscriptions!inner(
             mess_id,
-            profiles(full_name)
+            profiles(full_name, address, phone_number)
           )
         `)
         .in('subscriptions.mess_id', messIds)
@@ -75,20 +77,28 @@ export const OwnerMealSkipsView = () => {
           </CardHeader>
           <CardContent className="space-y-2">
             {skips.map((skip) => (
-              <div key={skip.id} className="flex items-center justify-between p-3 border rounded">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">
-                      {skip.subscriptions?.profiles?.full_name || 'Unknown Student'}
-                    </span>
-                    <Badge variant="secondary">
-                      {MEAL_TYPE_LABELS[skip.meal_type as keyof typeof MEAL_TYPE_LABELS]}
-                    </Badge>
-                  </div>
-                  {skip.reason && (
-                    <p className="text-sm text-muted-foreground">{skip.reason}</p>
-                  )}
+              <div key={skip.id} className="flex flex-col gap-2 p-3 border rounded">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium">
+                    {skip.subscriptions?.profiles?.full_name || 'Unknown Student'}
+                  </span>
+                  <Badge variant="secondary">
+                    {MEAL_TYPE_LABELS[skip.meal_type as keyof typeof MEAL_TYPE_LABELS]}
+                  </Badge>
                 </div>
+                {skip.subscriptions?.profiles?.address && (
+                  <p className="text-sm text-muted-foreground">
+                    Address: {skip.subscriptions.profiles.address}
+                  </p>
+                )}
+                {skip.subscriptions?.profiles?.phone_number && (
+                  <p className="text-sm text-muted-foreground">
+                    Phone: {skip.subscriptions.profiles.phone_number}
+                  </p>
+                )}
+                {skip.reason && (
+                  <p className="text-sm text-muted-foreground italic">Reason: {skip.reason}</p>
+                )}
               </div>
             ))}
           </CardContent>

@@ -340,9 +340,11 @@ export type Database = {
         Row: {
           created_at: string
           end_date: string
+          expiration_notified: boolean | null
           id: string
           mess_id: string
           owner_confirmation_screenshot_url: string | null
+          owner_expiration_notified: boolean | null
           payment_screenshot_url: string | null
           plan_duration_months: number | null
           plan_price: number | null
@@ -353,9 +355,11 @@ export type Database = {
         Insert: {
           created_at?: string
           end_date: string
+          expiration_notified?: boolean | null
           id?: string
           mess_id: string
           owner_confirmation_screenshot_url?: string | null
+          owner_expiration_notified?: boolean | null
           payment_screenshot_url?: string | null
           plan_duration_months?: number | null
           plan_price?: number | null
@@ -366,9 +370,11 @@ export type Database = {
         Update: {
           created_at?: string
           end_date?: string
+          expiration_notified?: boolean | null
           id?: string
           mess_id?: string
           owner_confirmation_screenshot_url?: string | null
+          owner_expiration_notified?: boolean | null
           payment_screenshot_url?: string | null
           plan_duration_months?: number | null
           plan_price?: number | null
@@ -393,6 +399,36 @@ export type Database = {
           },
         ]
       }
+      user_tokens: {
+        Row: {
+          created_at: string | null
+          full_name: string
+          id: string
+          is_used: boolean | null
+          role: Database["public"]["Enums"]["app_role"]
+          token: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name: string
+          id?: string
+          is_used?: boolean | null
+          role: Database["public"]["Enums"]["app_role"]
+          token: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string
+          id?: string
+          is_used?: boolean | null
+          role?: Database["public"]["Enums"]["app_role"]
+          token?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -413,6 +449,16 @@ export type Database = {
           full_name: string
           id: string
           phone_number: string
+        }[]
+      }
+      get_expiring_subscriptions: {
+        Args: { days_before: number }
+        Returns: {
+          days_until_expiry: number
+          end_date: string
+          id: string
+          mess_id: string
+          user_id: string
         }[]
       }
       get_user_role: {
