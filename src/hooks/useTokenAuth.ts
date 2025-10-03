@@ -75,9 +75,42 @@ export const useTokenAuth = () => {
         return { error };
       }
 
+      // Get user profile to check role and subscriptions
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        let redirectPath = '/';
+
+        // For students, check if they have active subscriptions
+        if (profile?.role === 'student') {
+          const { data: subscriptions } = await supabase
+            .from('subscriptions')
+            .select('id, status')
+            .eq('user_id', data.user.id)
+            .eq('status', 'active')
+            .limit(1);
+
+          if (subscriptions && subscriptions.length > 0) {
+            redirectPath = '/my-subscriptions';
+          }
+        } else if (profile?.role === 'mess_owner') {
+          redirectPath = '/owner-dashboard';
+        } else if (profile?.role === 'delivery_personnel') {
+          redirectPath = '/delivery-dashboard';
+        }
+
+        toast({ title: 'Login successful!' });
+        setIsLoading(false);
+        return { data, redirectPath };
+      }
+
       toast({ title: 'Login successful!' });
       setIsLoading(false);
-      return { data };
+      return { data, redirectPath: '/' };
     } catch (error: any) {
       toast({ title: 'Error during login', description: error.message, variant: 'destructive' });
       setIsLoading(false);

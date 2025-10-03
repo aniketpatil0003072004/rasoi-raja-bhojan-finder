@@ -64,8 +64,8 @@ const AuthPage = () => {
   
   const handleSignIn = async (data: TokenSignInFormValues) => {
     const result = await signInWithToken(data.token, data.password);
-    if (!result.error) {
-      navigate('/');
+    if (!result.error && result.redirectPath) {
+      navigate(result.redirectPath);
     }
   };
   
