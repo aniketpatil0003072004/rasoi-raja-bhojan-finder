@@ -68,7 +68,7 @@ const AuthPage = () => {
       // If token provided, validate it first
       if (data.token) {
         const { data: tokenData, error: tokenError } = await supabase
-          .from('user_tokens')
+          .from('user_tokens' as any)
           .select('*')
           .eq('token', data.token)
           .eq('is_used', false)
@@ -81,8 +81,8 @@ const AuthPage = () => {
         }
 
         // Check if token role matches selected role
-        if (tokenData.role !== data.role) {
-          sonnerToast.error(`This token is for ${tokenData.role} role, but you selected ${data.role}.`);
+        if ((tokenData as any).role !== data.role) {
+          sonnerToast.error(`This token is for ${(tokenData as any).role} role, but you selected ${data.role}.`);
           setIsLoading(false);
           return;
         }
@@ -106,8 +106,8 @@ const AuthPage = () => {
         // If token was provided, mark it as used
         if (data.token && authData.user) {
           await supabase
-            .from('user_tokens')
-            .update({ is_used: true, user_id: authData.user.id })
+            .from('user_tokens' as any)
+            .update({ is_used: true, user_id: authData.user.id } as any)
             .eq('token', data.token);
         }
         sonnerToast.success('Success! Please check your email to confirm your account.');
@@ -123,13 +123,13 @@ const AuthPage = () => {
     try {
       // Validate token and get user info
       const { data: tokenData, error: tokenError } = await supabase
-        .from('user_tokens')
+        .from('user_tokens' as any)
         .select('*')
         .eq('token', data.token)
         .eq('is_used', true)
         .maybeSingle();
 
-      if (tokenError || !tokenData || !tokenData.user_id) {
+      if (tokenError || !tokenData || !(tokenData as any).user_id) {
         sonnerToast.error('Invalid token or token not registered yet.');
         setIsLoading(false);
         return;
@@ -139,7 +139,7 @@ const AuthPage = () => {
       const { data: profile } = await supabase
         .from('profiles')
         .select('email, role')
-        .eq('id', tokenData.user_id)
+        .eq('id', (tokenData as any).user_id)
         .single();
 
       if (!profile?.email) {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast as sonnerToast } from 'sonner';
+import type { UserToken } from '@/types/token-auth';
 
 export const useTokenAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,7 +11,7 @@ export const useTokenAuth = () => {
     try {
       // First, validate the token and get user info
       const { data: tokenData, error: tokenError } = await supabase
-        .from('user_tokens')
+        .from('user_tokens' as any)
         .select('*')
         .eq('token', token)
         .maybeSingle();
@@ -25,18 +26,17 @@ export const useTokenAuth = () => {
         return null;
       }
 
-      if (tokenData.is_used && tokenData.user_id) {
+      const typedToken = tokenData as unknown as UserToken;
+
+      if (typedToken.is_used && typedToken.user_id) {
         // Token is already used, sign in the existing user
-        // We'll need to use their email and a temporary password approach
-        // Since we can't sign in with just user_id, we'll return the user data
-        // and let the auth page handle the actual sign in
         sonnerToast.error('Please use your email and password to sign in.');
         setIsLoading(false);
         return null;
       }
 
       setIsLoading(false);
-      return tokenData;
+      return typedToken;
     } catch (error: any) {
       sonnerToast.error('Error validating token: ' + error.message);
       setIsLoading(false);
@@ -49,7 +49,7 @@ export const useTokenAuth = () => {
     try {
       // Get token data
       const { data: tokenData, error: tokenError } = await supabase
-        .from('user_tokens')
+        .from('user_tokens' as any)
         .select('*')
         .eq('token', token)
         .eq('is_used', true)
@@ -57,18 +57,25 @@ export const useTokenAuth = () => {
 
       if (tokenError) throw tokenError;
 
-      if (!tokenData || !tokenData.user_id) {
+      if (!tokenData) {
         sonnerToast.error('Invalid token or token not yet registered.');
         setIsLoading(false);
         return { success: false };
       }
 
-      // For token-based signin, we need to use magic link or another method
-      // Since we can't directly sign in with user_id, we'll send a magic link
+      const typedToken = tokenData as unknown as UserToken;
+
+      if (!typedToken.user_id) {
+        sonnerToast.error('Token not yet registered.');
+        setIsLoading(false);
+        return { success: false };
+      }
+
+      // For token-based signin, we need to use magic link
       const { data: profile } = await supabase
         .from('profiles')
         .select('email')
-        .eq('id', tokenData.user_id)
+        .eq('id', typedToken.user_id)
         .single();
 
       if (!profile?.email) {

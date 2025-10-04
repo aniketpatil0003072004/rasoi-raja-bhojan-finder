@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import type { ExpiringSubscription } from '@/types/token-auth';
 
 export const useSubscriptionExpiration = () => {
   const { user } = useAuth();
@@ -13,12 +14,12 @@ export const useSubscriptionExpiration = () => {
       if (!user) return null;
 
       const { data, error } = await supabase
-        .rpc('get_expiring_subscriptions', { days_before: 7 })
+        .rpc('get_expiring_subscriptions' as any, { days_before: 7 })
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      return data as ExpiringSubscription | null;
     },
     enabled: !!user,
     refetchInterval: 1000 * 60 * 60, // Check every hour
@@ -43,16 +44,19 @@ export const useSubscriptionExpiration = () => {
 
       // Get expiring subscriptions for these messes
       const { data, error } = await supabase
-        .rpc('get_expiring_subscriptions', { days_before: 7 });
+        .rpc('get_expiring_subscriptions' as any, { days_before: 7 });
 
       if (error) throw error;
 
-      // Filter for this owner's messes and include profile info
-      const filtered = data?.filter((sub: any) => messIds.includes(sub.mess_id)) || [];
+      // Filter for this owner's messes
+      const allSubscriptions = (data || []) as ExpiringSubscription[];
+      const filtered = allSubscriptions.filter((sub: ExpiringSubscription) => 
+        messIds.includes(sub.mess_id)
+      );
       
       // Get profile info for each subscription
       const subscriptionsWithProfiles = await Promise.all(
-        filtered.map(async (sub: any) => {
+        filtered.map(async (sub: ExpiringSubscription) => {
           const { data: profile } = await supabase
             .from('profiles')
             .select('full_name, email')
@@ -76,7 +80,7 @@ export const useSubscriptionExpiration = () => {
       
       const { error } = await supabase
         .from('subscriptions')
-        .update({ [updateField]: true })
+        .update({ [updateField]: true } as any)
         .eq('id', subscriptionId);
 
       if (error) throw error;
