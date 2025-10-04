@@ -10,8 +10,6 @@ type MealSkipWithDetails = MealSkip & {
   subscriptions: {
     profiles: {
       full_name: string | null;
-      address: string | null;
-      phone_number: string | null;
     } | null;
   } | null;
 };
@@ -30,7 +28,7 @@ export const OwnerMealSkipsView = () => {
           *,
           subscriptions!inner(
             mess_id,
-            profiles(full_name, address, phone_number)
+            profiles(full_name)
           )
         `)
         .in('subscriptions.mess_id', messIds)
@@ -77,8 +75,8 @@ export const OwnerMealSkipsView = () => {
           </CardHeader>
           <CardContent className="space-y-2">
             {skips.map((skip) => (
-              <div key={skip.id} className="p-3 border rounded space-y-2">
-                <div className="flex items-center justify-between">
+              <div key={skip.id} className="flex items-center justify-between p-3 border rounded">
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
                       {skip.subscriptions?.profiles?.full_name || 'Unknown Student'}
@@ -87,24 +85,10 @@ export const OwnerMealSkipsView = () => {
                       {MEAL_TYPE_LABELS[skip.meal_type as keyof typeof MEAL_TYPE_LABELS]}
                     </Badge>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  {skip.subscriptions?.profiles?.address && (
-                    <div>
-                      <span className="text-muted-foreground">Address: </span>
-                      <span>{skip.subscriptions.profiles.address}</span>
-                    </div>
-                  )}
-                  {skip.subscriptions?.profiles?.phone_number && (
-                    <div>
-                      <span className="text-muted-foreground">Phone: </span>
-                      <span>{skip.subscriptions.profiles.phone_number}</span>
-                    </div>
+                  {skip.reason && (
+                    <p className="text-sm text-muted-foreground">{skip.reason}</p>
                   )}
                 </div>
-                {skip.reason && (
-                  <p className="text-sm text-muted-foreground italic">{skip.reason}</p>
-                )}
               </div>
             ))}
           </CardContent>

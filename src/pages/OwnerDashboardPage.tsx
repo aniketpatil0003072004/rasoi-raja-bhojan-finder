@@ -5,16 +5,12 @@ import ActiveSubscriptions from '@/components/ActiveSubscriptions';
 import DeliveryManagement from '@/components/DeliveryManagement';
 import MessManagement from '@/components/MessManagement';
 import { OwnerMealSkipsView } from '@/components/OwnerMealSkipsView';
-import { OwnerExpirationNotifications } from '@/components/OwnerExpirationNotifications';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const OwnerDashboardPage = () => {
   return (
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-6">Owner Dashboard</h1>
-      <div className="mb-6">
-        <OwnerExpirationNotifications />
-      </div>
       <Tabs defaultValue="mess" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="mess">Mess Management</TabsTrigger>
