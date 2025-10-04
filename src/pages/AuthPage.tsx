@@ -65,34 +65,15 @@ const AuthPage = () => {
   const handleSignUp = async (data: SignUpFormValues) => {
     setIsLoading(true);
     try {
-      // Validate token
-      const { data: tokenData, error: tokenError } = await supabase
+      // Check if token already exists
+      const { data: existingToken } = await supabase
         .from('user_tokens' as any)
-        .select('*')
+        .select('token')
         .eq('token', data.token)
         .maybeSingle();
 
-      if (tokenError) {
-        sonnerToast.error('Error validating token.');
-        setIsLoading(false);
-        return;
-      }
-
-      if (!tokenData) {
-        sonnerToast.error('Invalid token ID. Please check and try again.');
-        setIsLoading(false);
-        return;
-      }
-
-      if ((tokenData as any).is_used) {
-        sonnerToast.error('This token ID is already in use. Please use a different token ID.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Check if token role matches selected role
-      if ((tokenData as any).role !== data.role) {
-        sonnerToast.error(`This token is for ${(tokenData as any).role} role, but you selected ${data.role}.`);
+      if (existingToken) {
+        sonnerToast.error('This token ID is already taken. Please choose a different token ID.');
         setIsLoading(false);
         return;
       }
@@ -111,14 +92,18 @@ const AuthPage = () => {
 
       if (error) {
         sonnerToast.error(error.message);
-      } else {
-        // Mark token as used
-        if (authData.user) {
-          await supabase
-            .from('user_tokens' as any)
-            .update({ is_used: true, user_id: authData.user.id } as any)
-            .eq('token', data.token);
-        }
+      } else if (authData.user) {
+        // Create the token in the database
+        await supabase
+          .from('user_tokens' as any)
+          .insert({
+            token: data.token,
+            user_id: authData.user.id,
+            role: data.role,
+            full_name: data.fullName,
+            is_used: true
+          } as any);
+        
         sonnerToast.success('Success! Please check your email to confirm your account.');
       }
     } catch (error) {
