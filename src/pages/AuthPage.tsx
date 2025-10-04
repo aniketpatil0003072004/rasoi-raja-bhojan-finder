@@ -19,11 +19,11 @@ const signUpSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   role: z.enum(['student', 'mess_owner', 'delivery_personnel'], { required_error: "You must select a role." }),
+  token: z.string().optional(),
 });
 
 const signInSchema = z.object({
-  email: z.string().email({ message: "Invalid email address." }),
-  password: z.string().min(1, { message: "Password is required." }),
+  token: z.string().min(1, { message: "Token is required." }),
 });
 
 type SignUpFormValues = z.infer<typeof signUpSchema>;
@@ -65,7 +65,30 @@ const AuthPage = () => {
   const handleSignUp = async (data: SignUpFormValues) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      // If token provided, validate it first
+      if (data.token) {
+        const { data: tokenData, error: tokenError } = await supabase
+          .from('user_tokens')
+          .select('*')
+          .eq('token', data.token)
+          .eq('is_used', false)
+          .maybeSingle();
+
+        if (tokenError || !tokenData) {
+          sonnerToast.error('Invalid or already used token.');
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if token role matches selected role
+        if (tokenData.role !== data.role) {
+          sonnerToast.error(`This token is for ${tokenData.role} role, but you selected ${data.role}.`);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -76,9 +99,17 @@ const AuthPage = () => {
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
+
       if (error) {
         sonnerToast.error(error.message);
       } else {
+        // If token was provided, mark it as used
+        if (data.token && authData.user) {
+          await supabase
+            .from('user_tokens')
+            .update({ is_used: true, user_id: authData.user.id })
+            .eq('token', data.token);
+        }
         sonnerToast.success('Success! Please check your email to confirm your account.');
       }
     } catch (error) {
@@ -90,15 +121,42 @@ const AuthPage = () => {
   const handleSignIn = async (data: SignInFormValues) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
+      // Validate token and get user info
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('user_tokens')
+        .select('*')
+        .eq('token', data.token)
+        .eq('is_used', true)
+        .maybeSingle();
+
+      if (tokenError || !tokenData || !tokenData.user_id) {
+        sonnerToast.error('Invalid token or token not registered yet.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Get user's email
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email, role')
+        .eq('id', tokenData.user_id)
+        .single();
+
+      if (!profile?.email) {
+        sonnerToast.error('User profile not found.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Send magic link
+      const { error: magicLinkError } = await supabase.auth.signInWithOtp({
+        email: profile.email,
       });
-      if (error) {
-        sonnerToast.error(error.message);
+
+      if (magicLinkError) {
+        sonnerToast.error(magicLinkError.message);
       } else {
-        sonnerToast.success('Login successful!');
-        navigate('/');
+        sonnerToast.success('Check your email for the login link!');
       }
     } catch (error) {
       sonnerToast.error('An unexpected error occurred during sign-in.');
@@ -124,31 +182,22 @@ const AuthPage = () => {
             <form onSubmit={handleSubmitSignIn(handleSignIn)}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signIn-email">Email</Label>
-                  <Input id="signIn-email" type="email" placeholder="m@example.com" {...registerSignIn('email')} />
-                  {signInErrors.email && <p className="text-sm text-destructive">{signInErrors.email.message}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signIn-password">Password</Label>
-                  <div className="relative">
-                    <Input id="signIn-password" type={showSignInPassword ? 'text' : 'password'} {...registerSignIn('password')} className="pr-10" />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowSignInPassword((prev) => !prev)}
-                    >
-                      {showSignInPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      <span className="sr-only">{showSignInPassword ? 'Hide password' : 'Show password'}</span>
-                    </Button>
-                  </div>
-                  {signInErrors.password && <p className="text-sm text-destructive">{signInErrors.password.message}</p>}
+                  <Label htmlFor="signIn-token">Token ID</Label>
+                  <Input 
+                    id="signIn-token" 
+                    type="text" 
+                    placeholder="Enter your token ID" 
+                    {...registerSignIn('token')} 
+                  />
+                  {signInErrors.token && <p className="text-sm text-destructive">{signInErrors.token.message}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    We'll send a login link to your registered email address.
+                  </p>
                 </div>
               </CardContent>
               <CardFooter>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Signing In...' : 'Sign In'}
+                  {isLoading ? 'Sending Login Link...' : 'Sign In with Token'}
                 </Button>
               </CardFooter>
             </form>
@@ -188,6 +237,19 @@ const AuthPage = () => {
                     </Button>
                   </div>
                   {signUpErrors.password && <p className="text-sm text-destructive">{signUpErrors.password.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signUp-token">Token ID (Optional)</Label>
+                  <Input 
+                    id="signUp-token" 
+                    type="text" 
+                    placeholder="Enter your token if you have one" 
+                    {...registerSignUp('token')} 
+                  />
+                  {signUpErrors.token && <p className="text-sm text-destructive">{signUpErrors.token.message}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    If you received a token ID, enter it here to link your account.
+                  </p>
                 </div>
                 <div className="space-y-3">
                   <Label>I am a...</Label>
