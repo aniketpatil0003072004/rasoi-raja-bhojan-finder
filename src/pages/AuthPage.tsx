@@ -19,7 +19,7 @@ const signUpSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   role: z.enum(['student', 'mess_owner', 'delivery_personnel'], { required_error: "You must select a role." }),
-  token: z.string().optional(),
+  token: z.string().min(1, { message: "Token ID is required." }),
 });
 
 const signInSchema = z.object({
@@ -65,27 +65,36 @@ const AuthPage = () => {
   const handleSignUp = async (data: SignUpFormValues) => {
     setIsLoading(true);
     try {
-      // If token provided, validate it first
-      if (data.token) {
-        const { data: tokenData, error: tokenError } = await supabase
-          .from('user_tokens' as any)
-          .select('*')
-          .eq('token', data.token)
-          .eq('is_used', false)
-          .maybeSingle();
+      // Validate token
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('user_tokens' as any)
+        .select('*')
+        .eq('token', data.token)
+        .maybeSingle();
 
-        if (tokenError || !tokenData) {
-          sonnerToast.error('Invalid or already used token.');
-          setIsLoading(false);
-          return;
-        }
+      if (tokenError) {
+        sonnerToast.error('Error validating token.');
+        setIsLoading(false);
+        return;
+      }
 
-        // Check if token role matches selected role
-        if ((tokenData as any).role !== data.role) {
-          sonnerToast.error(`This token is for ${(tokenData as any).role} role, but you selected ${data.role}.`);
-          setIsLoading(false);
-          return;
-        }
+      if (!tokenData) {
+        sonnerToast.error('Invalid token ID. Please check and try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      if ((tokenData as any).is_used) {
+        sonnerToast.error('This token ID is already in use. Please use a different token ID.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if token role matches selected role
+      if ((tokenData as any).role !== data.role) {
+        sonnerToast.error(`This token is for ${(tokenData as any).role} role, but you selected ${data.role}.`);
+        setIsLoading(false);
+        return;
       }
 
       const { data: authData, error } = await supabase.auth.signUp({
@@ -103,8 +112,8 @@ const AuthPage = () => {
       if (error) {
         sonnerToast.error(error.message);
       } else {
-        // If token was provided, mark it as used
-        if (data.token && authData.user) {
+        // Mark token as used
+        if (authData.user) {
           await supabase
             .from('user_tokens' as any)
             .update({ is_used: true, user_id: authData.user.id } as any)
@@ -239,17 +248,14 @@ const AuthPage = () => {
                   {signUpErrors.password && <p className="text-sm text-destructive">{signUpErrors.password.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signUp-token">Token ID (Optional)</Label>
+                  <Label htmlFor="signUp-token">Token ID</Label>
                   <Input 
                     id="signUp-token" 
                     type="text" 
-                    placeholder="Enter your token if you have one" 
+                    placeholder="Enter your token ID" 
                     {...registerSignUp('token')} 
                   />
                   {signUpErrors.token && <p className="text-sm text-destructive">{signUpErrors.token.message}</p>}
-                  <p className="text-xs text-muted-foreground">
-                    If you received a token ID, enter it here to link your account.
-                  </p>
                 </div>
                 <div className="space-y-3">
                   <Label>I am a...</Label>
