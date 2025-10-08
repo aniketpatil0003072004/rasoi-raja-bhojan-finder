@@ -120,36 +120,21 @@ const AuthPage = () => {
   const handleSignIn = async (data: SignInFormValues) => {
     setIsLoading(true);
     try {
-      // Get user by token
-      const { data: tokenData, error: tokenError } = await supabase
-        .from('user_tokens')
-        .select('user_id, is_used, role')
-        .eq('token', data.tokenId)
-        .eq('is_used', true)
-        .maybeSingle();
+      // Use RPC function to get user by token (bypasses RLS)
+      const { data: userData, error: tokenError } = await supabase
+        .rpc('get_user_by_token', { p_token: data.tokenId });
 
-      if (tokenError || !tokenData) {
+      if (tokenError || !userData || userData.length === 0) {
         sonnerToast.error('Invalid Token ID. Please check and try again.');
         setIsLoading(false);
         return;
       }
 
-      // Get user's email to sign in
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', tokenData.user_id)
-        .single();
-
-      if (profileError || !profile?.email) {
-        sonnerToast.error('User not found.');
-        setIsLoading(false);
-        return;
-      }
+      const userInfo = userData[0];
 
       // Sign in with email and password
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: profile.email,
+        email: userInfo.email,
         password: data.password,
       });
 
@@ -159,7 +144,7 @@ const AuthPage = () => {
         return;
       }
 
-      sonnerToast.success(`Login successful! Welcome ${tokenData.role}`);
+      sonnerToast.success(`Login successful! Welcome ${userInfo.role}!`);
       navigate('/');
       
     } catch (error) {
