@@ -21,6 +21,7 @@ import MySubscriptionsPage from "./pages/MySubscriptionsPage";
 import StudentDeliveryTrackingPage from "./pages/StudentDeliveryTrackingPage";
 import DeliveryDashboardPage from "./pages/DeliveryDashboardPage";
 import DeliveryDetailsPage from "./pages/DeliveryDetailsPage";
+import { SubscriptionExpirationDialog } from "./components/SubscriptionExpirationDialog";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const Layout = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
+      <SubscriptionExpirationDialog />
       <main className="flex-grow">
         <Outlet /> {/* This is where the routed page component will be rendered */}
       </main>
