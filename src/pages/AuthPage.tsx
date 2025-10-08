@@ -24,6 +24,7 @@ const signUpSchema = z.object({
 
 const signInSchema = z.object({
   tokenId: z.string().min(1, { message: "Token ID is required." }),
+  password: z.string().min(1, { message: "Password is required." }),
 });
 
 type SignUpFormValues = z.infer<typeof signUpSchema>;
@@ -122,7 +123,7 @@ const AuthPage = () => {
       // Get user by token
       const { data: tokenData, error: tokenError } = await supabase
         .from('user_tokens')
-        .select('user_id, is_used')
+        .select('user_id, is_used, role')
         .eq('token', data.tokenId)
         .eq('is_used', true)
         .maybeSingle();
@@ -134,28 +135,32 @@ const AuthPage = () => {
       }
 
       // Get user's email to sign in
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('email')
         .eq('id', tokenData.user_id)
         .single();
 
-      if (!profile?.email) {
+      if (profileError || !profile?.email) {
         sonnerToast.error('User not found.');
         setIsLoading(false);
         return;
       }
 
-      // For token-based auth, we need the email from the token lookup
-      // This is a simplified approach - in production you might want a different auth flow
-      sonnerToast.success('Token validated! Please enter your password.');
-      
-      // Store the email temporarily and show password input
-      // For now, we'll show an info message
-      sonnerToast.info('Token-based login validated. Email: ' + profile.email);
-      
-      setIsLoading(false);
-      return;
+      // Sign in with email and password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: data.password,
+      });
+
+      if (signInError) {
+        sonnerToast.error('Invalid password. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      sonnerToast.success(`Login successful! Welcome ${tokenData.role}`);
+      navigate('/');
       
     } catch (error) {
       sonnerToast.error('An unexpected error occurred during sign-in.');
@@ -192,6 +197,28 @@ const AuthPage = () => {
                   <p className="text-xs text-muted-foreground">
                     Enter the Token ID you created during signup
                   </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signIn-password">Password</Label>
+                  <div className="relative">
+                    <Input 
+                      id="signIn-password" 
+                      type={showSignInPassword ? 'text' : 'password'} 
+                      {...registerSignIn('password')} 
+                      className="pr-10" 
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowSignInPassword((prev) => !prev)}
+                    >
+                      {showSignInPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="sr-only">{showSignInPassword ? 'Hide password' : 'Show password'}</span>
+                    </Button>
+                  </div>
+                  {signInErrors.password && <p className="text-sm text-destructive">{signInErrors.password.message}</p>}
                 </div>
               </CardContent>
               <CardFooter>
