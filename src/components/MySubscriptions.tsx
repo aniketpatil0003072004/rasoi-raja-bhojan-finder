@@ -16,20 +16,21 @@ import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MealSkipForm } from './MealSkipForm';
 import { MealSkipsList } from './MealSkipsList';
+import { MealCancellationTimer } from './MealCancellationTimer';
 
 const MySubscriptions = () => {
   const { user } = useAuth();
   const [viewingConfirmation, setViewingConfirmation] = React.useState<{ url: string; messName: string } | null>(null);
 
-  const fetchUserSubscriptions = async (userId: string): Promise<SubscriptionWithDetails[]> => {
+  const fetchUserSubscriptions = async (userId: string) => {
     const { data, error } = await supabase
       .from('subscriptions')
-      .select('*, messes(name)')
+      .select('*, messes(name, cancellation_deadline_hours)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     
     if (error) throw new Error(error.message);
-    return (data as SubscriptionWithDetails[]) || [];
+    return data || [];
   };
 
   const { data: subscriptions, isLoading } = useQuery({
@@ -164,6 +165,11 @@ const MySubscriptions = () => {
                   </TabsList>
                   {subscriptions.filter(sub => sub.status === 'active').map(sub => (
                     <TabsContent key={sub.id} value={sub.id} className="space-y-4">
+                      {sub.messes?.cancellation_deadline_hours && (
+                        <MealCancellationTimer 
+                          cancellationDeadlineHours={sub.messes.cancellation_deadline_hours} 
+                        />
+                      )}
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
                           <h4 className="font-medium mb-2">Skip a Meal</h4>

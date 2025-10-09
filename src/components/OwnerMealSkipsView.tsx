@@ -30,7 +30,12 @@ export const OwnerMealSkipsView = () => {
           *,
           subscriptions!inner(
             mess_id,
-            profiles(full_name, address, phone_number)
+            user_id,
+            profiles!subscriptions_user_id_fkey(
+              full_name,
+              address,
+              phone_number
+            )
           )
         `)
         .in('subscriptions.mess_id', messIds)
