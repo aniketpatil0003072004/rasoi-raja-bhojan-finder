@@ -31,7 +31,7 @@ export const OwnerMealSkipsView = () => {
           subscriptions!inner(
             mess_id,
             user_id,
-            profiles!subscriptions_user_id_fkey(
+            profiles:user_id(
               full_name,
               address,
               phone_number
