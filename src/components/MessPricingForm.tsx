@@ -23,6 +23,7 @@ const pricingFormSchema = z.object({
   price_2_months: z.number().min(1, "2 months price must be at least ₹1"),
   price_3_months: z.number().min(1, "3 months price must be at least ₹1"),
   price_6_months: z.number().min(1, "6 months price must be at least ₹1"),
+  cancellation_deadline_hours: z.number().min(1, "Must be at least 1 hour").max(24, "Cannot exceed 24 hours"),
 });
 
 type PricingFormValues = z.infer<typeof pricingFormSchema>;
@@ -43,6 +44,7 @@ const MessPricingForm: React.FC<MessPricingFormProps> = ({ mess, onSuccess }) =>
       price_2_months: mess.price_2_months || 0,
       price_3_months: mess.price_3_months || 0,
       price_6_months: mess.price_6_months || 0,
+      cancellation_deadline_hours: mess.cancellation_deadline_hours || 2,
     },
   });
 
@@ -152,6 +154,27 @@ const MessPricingForm: React.FC<MessPricingFormProps> = ({ mess, onSuccess }) =>
                     />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="cancellation_deadline_hours"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meal Cancellation Deadline (Hours)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="e.g. 2" 
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-sm text-muted-foreground">
+                    Number of hours before the meal time that students can cancel their meals
+                  </p>
                 </FormItem>
               )}
             />

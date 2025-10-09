@@ -171,6 +171,7 @@ const MySubscriptions = () => {
                             subscriptionId={sub.id} 
                             startDate={sub.start_date}
                             endDate={sub.end_date}
+                            messId={sub.mess_id}
                           />
                         </div>
                         <div>

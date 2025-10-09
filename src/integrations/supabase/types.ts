@@ -232,6 +232,7 @@ export type Database = {
       messes: {
         Row: {
           address: string | null
+          cancellation_deadline_hours: number | null
           contact: string | null
           created_at: string
           cuisine: string[] | null
@@ -253,6 +254,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          cancellation_deadline_hours?: number | null
           contact?: string | null
           created_at?: string
           cuisine?: string[] | null
@@ -274,6 +276,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          cancellation_deadline_hours?: number | null
           contact?: string | null
           created_at?: string
           cuisine?: string[] | null

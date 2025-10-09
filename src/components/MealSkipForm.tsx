@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -10,23 +10,57 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useMealSkips } from '@/hooks/useMealSkips';
 import { MEAL_TYPE_LABELS } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface MealSkipFormProps {
   subscriptionId: string;
   startDate: string;
   endDate: string;
+  messId?: string;
 }
 
-export const MealSkipForm = ({ subscriptionId, startDate, endDate }: MealSkipFormProps) => {
+export const MealSkipForm = ({ subscriptionId, startDate, endDate, messId }: MealSkipFormProps) => {
   const [date, setDate] = useState<Date>();
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [reason, setReason] = useState('');
+  const [cancellationDeadline, setCancellationDeadline] = useState<number>(2);
   const { createMealSkip } = useMealSkips(subscriptionId);
+
+  // Fetch mess cancellation deadline
+  useEffect(() => {
+    if (messId) {
+      const fetchCancellationDeadline = async () => {
+        const { data } = await supabase
+          .from('messes')
+          .select('cancellation_deadline_hours')
+          .eq('id', messId)
+          .maybeSingle();
+        
+        if (data?.cancellation_deadline_hours) {
+          setCancellationDeadline(data.cancellation_deadline_hours);
+        }
+      };
+      fetchCancellationDeadline();
+    }
+  }, [messId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!date || selectedMeals.length === 0) {
+      toast.error('Please select a date and at least one meal');
+      return;
+    }
+
+    // Validate cancellation deadline
+    const now = new Date();
+    const skipDate = new Date(date);
+    skipDate.setHours(0, 0, 0, 0); // Set to midnight for the meal day
+    const hoursUntilMeal = (skipDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursUntilMeal < cancellationDeadline) {
+      toast.error(`Meal cancellation must be done at least ${cancellationDeadline} hours in advance`);
       return;
     }
 
@@ -84,6 +118,9 @@ export const MealSkipForm = ({ subscriptionId, startDate, endDate }: MealSkipFor
             />
           </PopoverContent>
         </Popover>
+        <p className="text-xs text-muted-foreground">
+          Note: Meals must be cancelled at least {cancellationDeadline} hours in advance
+        </p>
       </div>
 
       <div className="space-y-2">
