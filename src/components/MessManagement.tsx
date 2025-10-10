@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import AddMenuForm from './AddMenuForm';
 import MessPricingForm from './MessPricingForm';
 import AssignDeliveryPersonForm from './AssignDeliveryPersonForm';
+import { MealCancellationDeadlineSettings } from './MealCancellationDeadlineSettings';
 
 const MessManagement: React.FC = () => {
   const { messes, isLoading, error } = useOwnerMesses();
@@ -68,10 +69,11 @@ const MessManagement: React.FC = () => {
               <h3 className="text-xl font-semibold mb-4">{mess.name}</h3>
               
               <Tabs defaultValue="menu" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="menu">Menu</TabsTrigger>
                   <TabsTrigger value="pricing">Pricing</TabsTrigger>
                   <TabsTrigger value="staff">Staff</TabsTrigger>
+                  <TabsTrigger value="cancellation">Cancellation</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="menu" className="mt-4">
@@ -87,6 +89,10 @@ const MessManagement: React.FC = () => {
                     messId={mess.id} 
                     messName={mess.name}
                   />
+                </TabsContent>
+                
+                <TabsContent value="cancellation" className="mt-4">
+                  <MealCancellationDeadlineSettings mess={mess} />
                 </TabsContent>
               </Tabs>
             </div>

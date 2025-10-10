@@ -30,12 +30,7 @@ export const OwnerMealSkipsView = () => {
           *,
           subscriptions!inner(
             mess_id,
-            user_id,
-            profiles:user_id(
-              full_name,
-              address,
-              phone_number
-            )
+            user_id
           )
         `)
         .in('subscriptions.mess_id', messIds)
@@ -43,7 +38,27 @@ export const OwnerMealSkipsView = () => {
         .order('skip_date', { ascending: true });
 
       if (error) throw error;
-      return data as MealSkipWithDetails[];
+
+      // Fetch profile details for each subscription
+      const mealSkipsWithProfiles = await Promise.all(
+        data.map(async (skip) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, address, phone_number')
+            .eq('id', skip.subscriptions.user_id)
+            .single();
+
+          return {
+            ...skip,
+            subscriptions: {
+              ...skip.subscriptions,
+              profiles: profile,
+            },
+          };
+        })
+      );
+
+      return mealSkipsWithProfiles as MealSkipWithDetails[];
     },
     enabled: messIds.length > 0,
   });

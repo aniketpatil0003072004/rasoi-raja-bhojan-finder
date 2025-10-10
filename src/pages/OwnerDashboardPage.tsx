@@ -1,10 +1,10 @@
-
 import React from 'react';
 import SubscriptionManagement from '@/components/SubscriptionManagement';
 import ActiveSubscriptions from '@/components/ActiveSubscriptions';
 import DeliveryManagement from '@/components/DeliveryManagement';
 import MessManagement from '@/components/MessManagement';
 import { OwnerMealSkipsView } from '@/components/OwnerMealSkipsView';
+import { OwnerCancellationTimer } from '@/components/OwnerCancellationTimer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const OwnerDashboardPage = () => {
@@ -37,7 +37,10 @@ const OwnerDashboardPage = () => {
         </TabsContent>
         
         <TabsContent value="meal-skips" className="mt-6">
-          <OwnerMealSkipsView />
+          <div className="space-y-6">
+            <OwnerCancellationTimer />
+            <OwnerMealSkipsView />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
