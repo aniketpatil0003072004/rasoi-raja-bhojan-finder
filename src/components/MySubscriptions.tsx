@@ -25,7 +25,7 @@ const MySubscriptions = () => {
   const fetchUserSubscriptions = async (userId: string) => {
     const { data, error } = await supabase
       .from('subscriptions')
-      .select('*, messes(name, cancellation_deadline_hours)')
+      .select('*, messes(name, cancellation_deadline_time)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     
@@ -165,9 +165,9 @@ const MySubscriptions = () => {
                   </TabsList>
                   {subscriptions.filter(sub => sub.status === 'active').map(sub => (
                     <TabsContent key={sub.id} value={sub.id} className="space-y-4">
-                      {sub.messes?.cancellation_deadline_hours && (
+                      {(sub.messes as any)?.cancellation_deadline_time && (
                         <MealCancellationTimer 
-                          cancellationDeadlineHours={sub.messes.cancellation_deadline_hours} 
+                          cancellationDeadlineTime={(sub.messes as any).cancellation_deadline_time} 
                         />
                       )}
                       <div className="grid md:grid-cols-2 gap-4">

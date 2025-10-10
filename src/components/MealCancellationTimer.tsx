@@ -4,10 +4,10 @@ import { Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface MealCancellationTimerProps {
-  cancellationDeadlineHours: number;
+  cancellationDeadlineTime: string; // Time in HH:MM:SS or HH:MM format
 }
 
-export const MealCancellationTimer = ({ cancellationDeadlineHours }: MealCancellationTimerProps) => {
+export const MealCancellationTimer = ({ cancellationDeadlineTime }: MealCancellationTimerProps) => {
   const [timeRemaining, setTimeRemaining] = useState<string>('');
 
   useEffect(() => {
@@ -16,9 +16,12 @@ export const MealCancellationTimer = ({ cancellationDeadlineHours }: MealCancell
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      // Calculate deadline: today at (24 - cancellationDeadlineHours) o'clock
+      // Parse the deadline time (HH:MM:SS or HH:MM)
+      const [hours, minutes] = cancellationDeadlineTime.split(':').map(Number);
+      
+      // Calculate deadline: today at the specified time
       const deadline = new Date(today);
-      deadline.setHours(24 - cancellationDeadlineHours, 0, 0, 0);
+      deadline.setHours(hours, minutes, 0, 0);
       
       const diff = deadline.getTime() - now.getTime();
       
@@ -27,21 +30,26 @@ export const MealCancellationTimer = ({ cancellationDeadlineHours }: MealCancell
         return;
       }
 
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
+      const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secondsLeft = Math.floor((diff % (1000 * 60)) / 1000);
 
-      setTimeRemaining(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+      setTimeRemaining(`${hoursLeft.toString().padStart(2, '0')}:${minutesLeft.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}`);
     };
 
     calculateTimeRemaining();
     const interval = setInterval(calculateTimeRemaining, 1000);
 
     return () => clearInterval(interval);
-  }, [cancellationDeadlineHours]);
+  }, [cancellationDeadlineTime]);
 
-  const deadlineTime = 24 - cancellationDeadlineHours;
-  const deadlineDisplay = `${deadlineTime.toString().padStart(2, '0')}:00 ${deadlineTime >= 12 ? 'PM' : 'AM'}`;
+  // Format deadline time for display (convert to 12-hour format)
+  const formatDeadlineTime = () => {
+    const [hours, minutes] = cancellationDeadlineTime.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
 
   return (
     <Alert className="border-primary/20 bg-primary/5">
@@ -53,7 +61,7 @@ export const MealCancellationTimer = ({ cancellationDeadlineHours }: MealCancell
             <span className="text-2xl font-mono font-bold text-primary ml-4 tabular-nums">{timeRemaining}</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Deadline: Today at {deadlineDisplay} ({cancellationDeadlineHours} hours before tomorrow's first meal)
+            Deadline: Today at {formatDeadlineTime()}
           </p>
         </div>
       </AlertDescription>

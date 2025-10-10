@@ -24,7 +24,7 @@ export const MealSkipForm = ({ subscriptionId, startDate, endDate, messId }: Mea
   const [date, setDate] = useState<Date>();
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [reason, setReason] = useState('');
-  const [cancellationDeadline, setCancellationDeadline] = useState<number>(2);
+  const [cancellationDeadlineTime, setCancellationDeadlineTime] = useState<string>('23:00');
   const { createMealSkip } = useMealSkips(subscriptionId);
 
   // Fetch mess cancellation deadline
@@ -33,12 +33,12 @@ export const MealSkipForm = ({ subscriptionId, startDate, endDate, messId }: Mea
       const fetchCancellationDeadline = async () => {
         const { data } = await supabase
           .from('messes')
-          .select('cancellation_deadline_hours')
+          .select('cancellation_deadline_time')
           .eq('id', messId)
           .maybeSingle();
         
-        if (data?.cancellation_deadline_hours) {
-          setCancellationDeadline(data.cancellation_deadline_hours);
+        if (data?.cancellation_deadline_time) {
+          setCancellationDeadlineTime(data.cancellation_deadline_time);
         }
       };
       fetchCancellationDeadline();
@@ -53,14 +53,22 @@ export const MealSkipForm = ({ subscriptionId, startDate, endDate, messId }: Mea
       return;
     }
 
-    // Validate cancellation deadline
+    // Validate cancellation deadline - must be done before today's deadline time
     const now = new Date();
-    const skipDate = new Date(date);
-    skipDate.setHours(0, 0, 0, 0); // Set to midnight for the meal day
-    const hoursUntilMeal = (skipDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const [hours, minutes] = cancellationDeadlineTime.split(':').map(Number);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadline = new Date(today);
+    deadline.setHours(hours, minutes, 0, 0);
     
-    if (hoursUntilMeal < cancellationDeadline) {
-      toast.error(`Meal cancellation must be done at least ${cancellationDeadline} hours in advance`);
+    // Can only cancel tomorrow's meals if we're before today's deadline
+    const skipDate = new Date(date);
+    skipDate.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    if (skipDate.getTime() === tomorrow.getTime() && now.getTime() >= deadline.getTime()) {
+      toast.error(`Cannot cancel tomorrow's meals after today's ${cancellationDeadlineTime} deadline`);
       return;
     }
 
@@ -119,7 +127,7 @@ export const MealSkipForm = ({ subscriptionId, startDate, endDate, messId }: Mea
           </PopoverContent>
         </Popover>
         <p className="text-xs text-muted-foreground">
-          Note: Meals must be cancelled at least {cancellationDeadline} hours in advance
+          Note: Tomorrow's meals must be cancelled before today's {cancellationDeadlineTime} deadline
         </p>
       </div>
 
