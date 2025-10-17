@@ -59,7 +59,7 @@ const AuthPage = () => {
 
   useEffect(() => {
     if (session) {
-      navigate('/'); // Redirect if already logged in
+      navigate('/dashboard'); // Redirect if already logged in
     }
   }, [session, navigate]);
 
@@ -145,7 +145,16 @@ const AuthPage = () => {
       }
 
       sonnerToast.success(`Login successful! Welcome ${userInfo.role}!`);
-      navigate('/');
+      console.log(userInfo.role)
+      if(userInfo.role === "mess_owner"){
+        navigate('/dashboard');
+      }
+      if(userInfo.role === "delivery_personnel"){
+        navigate("/delivery-dashboard")
+      }
+      if(userInfo.role === "student"){
+        navigate("/my-subscriptions")
+      }
       
     } catch (error) {
       sonnerToast.error('An unexpected error occurred during sign-in.');
@@ -222,6 +231,11 @@ const AuthPage = () => {
             </CardHeader>
             <form onSubmit={handleSubmitSignUp(handleSignUp)}>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signUp-fullName">User Name</Label>
+                  <Input id="signUp-fullName" placeholder="John Doe" {...registerSignUp('userName')} />
+                  {signUpErrors.fullName && <p className="text-sm text-destructive">{signUpErrors.userName.message}</p>}
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="signUp-fullName">Full Name</Label>
                   <Input id="signUp-fullName" placeholder="John Doe" {...registerSignUp('fullName')} />
