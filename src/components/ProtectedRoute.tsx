@@ -1,42 +1,49 @@
-
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Profile } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Profile } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
 
 interface ProtectedRouteProps {
-  allowedRoles?: Array<Profile['role']>;
+  allowedRoles?: Array<Profile["role"]>;
 }
 
 const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
-  const { user, loading: authLoading, session } = useAuth();
+  const [authLoading, setAuthLoading] = useState(false);
+  const userName = localStorage.getItem("user");
   const location = useLocation();
 
   const fetchProfile = async () => {
-    if (!user) return null;
+    setAuthLoading(true);
+    if (!userName) return null;
     const { data, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
+      .from("user")
+      .select("role")
+      .eq("user_name", userName)
       .single();
 
     if (error) {
-      console.error('Error fetching profile for route protection', error);
+      console.error("Error fetching profile for route protection", error);
       return null;
     }
+    setAuthLoading(false);
     return data;
   };
 
-  const { data: profile, isLoading: profileLoading, isError } = useQuery({
-    queryKey: ['userProfileRole', user?.id],
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["userProfileRole", userName],
     queryFn: fetchProfile,
-    enabled: !authLoading && !!user,
+    enabled: !!userName,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const isLoading = authLoading || (!!user && profileLoading);
+  const isLoading = authLoading || (!!userName && profileLoading);
 
   if (isLoading) {
     return (
@@ -49,18 +56,24 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     );
   }
 
-  if (!session || !user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+  if (!userName) {
+    return <Navigate to="/auth/sign-in" state={{ from: location }} replace />;
   }
 
-  if (isError) {
+  console.log(profile);
+
+  if (isError || !profile) {
     // Redirect to home if we can't fetch the profile
     return <Navigate to="/" replace />;
   }
 
   // If there are allowed roles, check if user's role is one of them
-  if (allowedRoles && profile && allowedRoles.includes(profile.role)) {
-    return <Outlet />;
+  if (allowedRoles) {
+    if (allowedRoles.includes(profile.role)) {
+      return <Outlet />;
+    } else {
+      return <Navigate to="/" replace />;
+    }
   }
 
   // If roles are required but user doesn't have one, redirect

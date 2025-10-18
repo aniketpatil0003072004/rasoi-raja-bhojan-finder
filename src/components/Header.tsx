@@ -1,6 +1,13 @@
-
 import { Link, useNavigate } from "react-router-dom";
-import { UtensilsCrossed, Search, UserCircle, LogOut, LayoutDashboard, BookUser, Truck } from "lucide-react";
+import {
+  UtensilsCrossed,
+  Search,
+  UserCircle,
+  LogOut,
+  LayoutDashboard,
+  BookUser,
+  Truck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -18,66 +25,76 @@ import { Profile } from "@/types";
 import NotificationBell from "./NotificationBell";
 
 const Header = () => {
-  const { user, signOut, loading: authLoading } = useAuth();
+  // const { user, signOut, loading: authLoading } = useAuth();
+  const user = localStorage.getItem("user");
+  let userData;
+
+  if (user) {
+    userData = JSON.parse(user);
+  }
+
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<Profile | null>(null);
+  // const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (user && user.id) {
-        setProfileLoading(true);
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
+  console.log(userData);
 
-          if (error) {
-            console.error("Error fetching profile:", error);
-            setProfile(null);
-          } else {
-            setProfile(data);
-          }
-        } catch (e) {
-          console.error("Exception fetching profile:", e);
-          setProfile(null);
-        } finally {
-          setProfileLoading(false);
-        }
-      } else {
-        setProfile(null);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchProfile = async () => {
+  //     if (userName) {
+  //       setProfileLoading(true);
+  //       try {
+  //         const { data, error } = await supabase
+  //           .from("profiles")
+  //           .select("*")
+  //           .eq("user", user.id)
+  //           .single();
 
-    if (!authLoading) {
-      fetchProfile();
-    }
-  }, [user, authLoading]);
+  //         if (error) {
+  //           console.error("Error fetching profile:", error);
+  //           setProfile(null);
+  //         } else {
+  //           setProfile(data);
+  //         }
+  //       } catch (e) {
+  //         console.error("Exception fetching profile:", e);
+  //         setProfile(null);
+  //       } finally {
+  //         setProfileLoading(false);
+  //       }
+  //     } else {
+  //       setProfile(null);
+  //     }
+  //   };
+
+  //   if (!authLoading) {
+  //     fetchProfile();
+  //   }
+  // }, [user, authLoading]);
 
   const handleSignOut = async () => {
-    await signOut();
-    setProfile(null); 
-    navigate('/');
+    localStorage.setItem("username", "");
+    localStorage.setItem("user", "");
+    navigate("/");
   };
 
   const getInitials = (name?: string | null) => {
     if (name) {
       return name
-        .split(' ')
+        .split(" ")
         .map((n) => n[0])
-        .join('')
+        .join("")
         .toUpperCase();
     }
-    if (user?.email) {
-      return user.email[0].toUpperCase();
+    if (userData?.email) {
+      return userData.email[0].toUpperCase();
     }
     return "U";
   };
-  
-  const displayName = profile?.full_name || user?.email || "User";
-  const displayDetail = (profile?.full_name && user?.email) ? user.email : "";
+
+  const displayName = userData?.full_name || userData?.email || "User";
+  const displayDetail =
+    userData?.full_name && userData?.email ? userData.email : "";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -87,7 +104,7 @@ const Header = () => {
           <span className="font-bold text-2xl text-primary">Rasoi Raja</span>
         </Link>
         <nav className="flex flex-1 items-center space-x-4">
-          {(!user || profile?.role === 'student') && (
+          {(!user || userData?.role === "student") && (
             <Link
               to="/messes"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
@@ -95,7 +112,7 @@ const Header = () => {
               Find a Mess
             </Link>
           )}
-          {(!user || profile?.role === 'mess_owner') && (
+          {(!user || userData?.role === "mess_owner") && (
             <Link
               to="/add-mess"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
@@ -110,17 +127,25 @@ const Header = () => {
             <Search className="h-5 w-5" />
           </Button>
           {user && <NotificationBell />}
-          {authLoading || (user && profileLoading) ? (
+          {user && profileLoading ? (
             <Button variant="outline" size="sm" disabled>
               Loading...
             </Button>
           ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
-                    <AvatarFallback>{getInitials(profile?.full_name)}</AvatarFallback>
+                    <AvatarImage
+                      src={userData?.avatar_url || undefined}
+                      alt={displayName}
+                    />
+                    <AvatarFallback>
+                      {getInitials(userData?.full_name)}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -130,26 +155,32 @@ const Header = () => {
                     <p className="text-sm font-medium leading-none">
                       {displayName}
                     </p>
-                    {displayDetail && <p className="text-xs leading-none text-muted-foreground">
-                      {displayDetail}
-                    </p>}
+                    {displayDetail && (
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {displayDetail}
+                      </p>
+                    )}
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {profile?.role === 'mess_owner' && (
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                {userData?.role === "mess_owner" && (
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </DropdownMenuItem>
                 )}
-                {profile?.role === 'student' && (
-                  <DropdownMenuItem onClick={() => navigate('/my-subscriptions')}>
+                {userData?.role === "student" && (
+                  <DropdownMenuItem
+                    onClick={() => navigate("/my-subscriptions")}
+                  >
                     <BookUser className="mr-2 h-4 w-4" />
                     <span>My Subscriptions</span>
                   </DropdownMenuItem>
                 )}
-                {profile?.role === 'delivery_personnel' && (
-                  <DropdownMenuItem onClick={() => navigate('/delivery-dashboard')}>
+                {userData?.role === "delivery_personnel" && (
+                  <DropdownMenuItem
+                    onClick={() => navigate("/delivery-dashboard")}
+                  >
                     <Truck className="mr-2 h-4 w-4" />
                     <span>My Deliveries</span>
                   </DropdownMenuItem>
@@ -163,7 +194,7 @@ const Header = () => {
             </DropdownMenu>
           ) : (
             <Button asChild variant="outline" size="sm">
-              <Link to="/auth">
+              <Link to="/auth/sign-in">
                 <UserCircle className="mr-2 h-4 w-4" />
                 Login / Sign Up
               </Link>

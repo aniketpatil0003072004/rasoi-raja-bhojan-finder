@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -22,6 +21,8 @@ import StudentDeliveryTrackingPage from "./pages/StudentDeliveryTrackingPage";
 import DeliveryDashboardPage from "./pages/DeliveryDashboardPage";
 import DeliveryDetailsPage from "./pages/DeliveryDetailsPage";
 import { SubscriptionExpirationDialog } from "./components/SubscriptionExpirationDialog";
+import SignUpPage from "./pages/SignUp";
+import SignInPage from "./pages/SignIn";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +32,8 @@ const Layout = () => {
       <Header />
       <SubscriptionExpirationDialog />
       <main className="flex-grow">
-        <Outlet /> {/* This is where the routed page component will be rendered */}
+        <Outlet />{" "}
+        {/* This is where the routed page component will be rendered */}
       </main>
       <Footer />
     </div>
@@ -41,33 +43,53 @@ const Layout = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider> {/* Wrap with AuthProvider */}
+      <AuthProvider>
+        {" "}
+        {/* Wrap with AuthProvider */}
         <Toaster />
         <Sonner />
         <BrowserRouter>
           <ScrollToTop />
           <Routes>
-            <Route element={<Layout />}> {/* Apply layout to all these routes */}
+            <Route element={<Layout />}>
+              {" "}
+              {/* Apply layout to all these routes */}
               <Route path="/" element={<Index />} />
               <Route path="/messes" element={<MessesPage />} />
               <Route path="/mess/:id" element={<MessDetailPage />} />
-              <Route path="/auth" element={<AuthPage />} /> {/* Add AuthPage route */}
-              
-              <Route element={<ProtectedRoute allowedRoles={['mess_owner']} />}>
+              <Route element={<AuthPage />}>
+                <Route path="/auth/sign-up" element={<SignUpPage />} />
+                <Route index path="/auth/sign-in" element={<SignInPage />} />
+              </Route>{" "}
+              {/* Add AuthPage route */}
+              <Route element={<ProtectedRoute allowedRoles={["mess_owner"]} />}>
                 <Route path="/add-mess" element={<AddMessPage />} />
                 <Route path="/dashboard" element={<OwnerDashboardPage />} />
               </Route>
-
-              <Route element={<ProtectedRoute allowedRoles={['student']} />}>
-                <Route path="/my-subscriptions" element={<MySubscriptionsPage />} />
-                <Route path="/my-deliveries" element={<StudentDeliveryTrackingPage />} />
+              <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
+                <Route
+                  path="/my-subscriptions"
+                  element={<MySubscriptionsPage />}
+                />
+                <Route
+                  path="/my-deliveries"
+                  element={<StudentDeliveryTrackingPage />}
+                />
               </Route>
-
-              <Route element={<ProtectedRoute allowedRoles={['delivery_personnel']} />}>
-                <Route path="/delivery-dashboard" element={<DeliveryDashboardPage />} />
-                <Route path="/delivery/:deliveryId" element={<DeliveryDetailsPage />} />
+              <Route
+                element={
+                  <ProtectedRoute allowedRoles={["delivery_personnel"]} />
+                }
+              >
+                <Route
+                  path="/delivery-dashboard"
+                  element={<DeliveryDashboardPage />}
+                />
+                <Route
+                  path="/delivery/:deliveryId"
+                  element={<DeliveryDetailsPage />}
+                />
               </Route>
-
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
