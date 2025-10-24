@@ -1,17 +1,22 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Home, PackageCheck, Truck } from "lucide-react";
 import HeroSection from "@/components/HeroSection";
 import MessCard from "@/components/MessCard";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { Mess, Profile } from "@/types";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/AuthContext";
-import { useState, useEffect } from "react";
-import { Home, PackageCheck, Truck } from "lucide-react";
 
 const Index = () => {
   const [authLoading, setAuthLoading] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  const userData = localStorage.getItem("user");
+  const user = userData ? JSON.parse(userData) : null;
+
   const fetchFeaturedMesses = async (): Promise<Mess[]> => {
     const { data, error } = await supabase
       .from("messes")
@@ -30,10 +35,6 @@ const Index = () => {
     queryKey: ["featuredMesses"],
     queryFn: fetchFeaturedMesses,
   });
-  const userData = localStorage.getItem("user");
-  const user = JSON.parse(userData);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -64,13 +65,14 @@ const Index = () => {
       } else {
         setProfile(null);
         setProfileLoading(false);
+        setAuthLoading(false);
       }
     };
 
     if (!authLoading) {
       fetchProfile();
     }
-  }, [user, authLoading]);
+  }, [user?.id, authLoading]);
 
   return (
     <div>

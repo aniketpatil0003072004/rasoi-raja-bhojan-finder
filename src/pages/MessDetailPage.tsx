@@ -1,27 +1,7 @@
 import React from "react";
-import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Mess, Menu, Profile, Subscription } from "@/types";
-import {
-  Star,
-  MapPin,
-  IndianRupee,
-  Phone,
-  Clock,
-  Utensils,
-  Truck,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/AuthContext";
-import AddMenuForm from "@/components/AddMenuForm";
-import SubscriptionForm from "@/components/SubscriptionForm";
 import {
   Dialog,
   DialogContent,
@@ -30,11 +10,30 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { Menu, Mess, Profile, Subscription } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import {
+  CheckCircle,
+  Clock,
+  IndianRupee,
+  MapPin,
+  Phone,
+  Star,
+  Truck,
+  Utensils,
+  XCircle,
+} from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import AddMenuForm from "@/components/AddMenuForm";
+import SubscriptionForm from "@/components/SubscriptionForm";
 
 const MessDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const userData = localStorage.getItem("user");
-  const user = JSON.parse(userData);
+  const user = userData ? JSON.parse(userData) : null;
   const [isMenuDialogOpen, setIsMenuDialogOpen] = React.useState(false);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] =
     React.useState(false);
@@ -47,19 +46,21 @@ const MessDetailPage = () => {
       .eq("id", messId)
       .single();
     if (error && error.code !== "PGRST116") {
-      // Ignore error for no rows found
       throw new Error(error.message);
     }
     return data;
   };
 
-  const fetchMenu = async (messId: string): Promise<Menu[]> => {
+  const fetchMenu = async (messId: string): Promise<Menu | null> => {
     const { data, error } = await supabase
       .from("menus")
       .select("*")
-      .eq("mess_id", messId);
-    if (error) throw new Error(error.message);
-    return data || [];
+      .eq("mess_id", messId)
+      .single();
+    if (error && error.code !== "PGRST116") {
+      return null;
+    }
+    return data;
   };
 
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
@@ -126,19 +127,19 @@ const MessDetailPage = () => {
     enabled: !!id && !!user,
   });
 
-  const orderedMenu = React.useMemo(() => {
-    if (!menu) return [];
-    const dayOrder: Record<string, number> = {
-      Monday: 0,
-      Tuesday: 1,
-      Wednesday: 2,
-      Thursday: 3,
-      Friday: 4,
-      Saturday: 5,
-      Sunday: 6,
-    };
-    return [...menu].sort((a, b) => dayOrder[a.day] - dayOrder[b.day]);
-  }, [menu]);
+  const parseMenuItems = (items: string | null): string[] => {
+    if (!items) return [];
+    try {
+      const parsed = JSON.parse(items);
+      return Array.isArray(parsed) ? parsed.filter((item) => item.trim()) : [];
+    } catch {
+      return items ? [items] : [];
+    }
+  };
+
+  const breakfastItems = menu ? parseMenuItems(menu.breakfast) : [];
+  const lunchItems = menu ? parseMenuItems(menu.lunch) : [];
+  const dinnerItems = menu ? parseMenuItems(menu.dinner) : [];
 
   const isLoading = isMessLoading || isMenuLoading;
   const isOwner = user && mess && user.id === mess.owner_id;
@@ -178,6 +179,11 @@ const MessDetailPage = () => {
     );
   }
 
+  const hasMenuItems =
+    breakfastItems.length > 0 ||
+    lunchItems.length > 0 ||
+    dinnerItems.length > 0;
+
   return (
     <div className="container py-8">
       <div className="grid md:grid-cols-3 gap-8">
@@ -212,7 +218,7 @@ const MessDetailPage = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center">
                   <Utensils className="w-6 h-6 mr-2 text-primary" />
-                  Weekly Menu
+                  General Menu
                 </CardTitle>
                 {isOwner && (
                   <Dialog
@@ -224,10 +230,10 @@ const MessDetailPage = () => {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[650px]">
                       <DialogHeader>
-                        <DialogTitle>Manage Weekly Menu</DialogTitle>
+                        <DialogTitle>Manage General Menu</DialogTitle>
                         <DialogDescription>
-                          Update the breakfast, lunch, and dinner options for
-                          each day. Click save when you're done.
+                          Update the breakfast, lunch, and dinner options. Click
+                          save when you're done.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="max-h-[70vh] overflow-y-auto p-1 pr-2">
@@ -244,32 +250,44 @@ const MessDetailPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {orderedMenu && orderedMenu.length > 0 ? (
+              {hasMenuItems ? (
                 <div className="space-y-4">
-                  {orderedMenu.map((dayMenu) => (
-                    <div key={dayMenu.day}>
-                      <h4 className="font-semibold text-md text-primary mb-1">
-                        {dayMenu.day}
+                  {breakfastItems.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-md text-primary mb-2">
+                        Breakfast
                       </h4>
                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 pl-2">
-                        {dayMenu.breakfast && (
-                          <li>
-                            <strong>Breakfast:</strong> {dayMenu.breakfast}
-                          </li>
-                        )}
-                        {dayMenu.lunch && (
-                          <li>
-                            <strong>Lunch:</strong> {dayMenu.lunch}
-                          </li>
-                        )}
-                        {dayMenu.dinner && (
-                          <li>
-                            <strong>Dinner:</strong> {dayMenu.dinner}
-                          </li>
-                        )}
+                        {breakfastItems.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
                       </ul>
                     </div>
-                  ))}
+                  )}
+                  {lunchItems.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-md text-primary mb-2">
+                        Lunch
+                      </h4>
+                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 pl-2">
+                        {lunchItems.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {dinnerItems.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-md text-primary mb-2">
+                        Dinner
+                      </h4>
+                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 pl-2">
+                        {dinnerItems.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-muted-foreground">
