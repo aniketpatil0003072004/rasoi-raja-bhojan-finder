@@ -1,10 +1,19 @@
-
 import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Mess, Menu, Profile, Subscription } from "@/types";
-import { Star, MapPin, IndianRupee, Phone, Clock, Utensils, Truck, CheckCircle, XCircle } from "lucide-react";
+import {
+  Star,
+  MapPin,
+  IndianRupee,
+  Phone,
+  Clock,
+  Utensils,
+  Truck,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,9 +33,11 @@ import {
 
 const MessDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const userData = localStorage.getItem("user");
+  const user = JSON.parse(userData);
   const [isMenuDialogOpen, setIsMenuDialogOpen] = React.useState(false);
-  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = React.useState(false);
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] =
+    React.useState(false);
   const [isContactDialogOpen, setIsContactDialogOpen] = React.useState(false);
 
   const fetchMess = async (messId: string): Promise<Mess | null> => {
@@ -35,7 +46,8 @@ const MessDetailPage = () => {
       .select("*")
       .eq("id", messId)
       .single();
-    if (error && error.code !== 'PGRST116') { // Ignore error for no rows found
+    if (error && error.code !== "PGRST116") {
+      // Ignore error for no rows found
       throw new Error(error.message);
     }
     return data;
@@ -63,13 +75,16 @@ const MessDetailPage = () => {
     return data;
   };
 
-  const fetchUserSubscription = async (messId: string, userId: string): Promise<Subscription | null> => {
+  const fetchUserSubscription = async (
+    messId: string,
+    userId: string
+  ): Promise<Subscription | null> => {
     const { data, error } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('mess_id', messId)
-      .eq('user_id', userId)
-      .eq('status', 'active')
+      .from("subscriptions")
+      .select("*")
+      .eq("mess_id", messId)
+      .eq("user_id", userId)
+      .eq("status", "active")
       .maybeSingle();
 
     if (error) {
@@ -79,13 +94,21 @@ const MessDetailPage = () => {
     return data;
   };
 
-  const { data: mess, isLoading: isMessLoading, error: messError } = useQuery({
+  const {
+    data: mess,
+    isLoading: isMessLoading,
+    error: messError,
+  } = useQuery({
     queryKey: ["mess", id],
     queryFn: () => fetchMess(id!),
     enabled: !!id,
   });
 
-  const { data: menu, isLoading: isMenuLoading, error: menuError } = useQuery({
+  const {
+    data: menu,
+    isLoading: isMenuLoading,
+    error: menuError,
+  } = useQuery({
     queryKey: ["menu", id],
     queryFn: () => fetchMenu(id!),
     enabled: !!id,
@@ -98,20 +121,28 @@ const MessDetailPage = () => {
   });
 
   const { data: userSubscription } = useQuery({
-    queryKey: ['userSubscription', id, user?.id],
+    queryKey: ["userSubscription", id, user?.id],
     queryFn: () => fetchUserSubscription(id!, user!.id),
     enabled: !!id && !!user,
   });
 
   const orderedMenu = React.useMemo(() => {
     if (!menu) return [];
-    const dayOrder: Record<string, number> = { "Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6 };
+    const dayOrder: Record<string, number> = {
+      Monday: 0,
+      Tuesday: 1,
+      Wednesday: 2,
+      Thursday: 3,
+      Friday: 4,
+      Saturday: 5,
+      Sunday: 6,
+    };
     return [...menu].sort((a, b) => dayOrder[a.day] - dayOrder[b.day]);
   }, [menu]);
 
   const isLoading = isMessLoading || isMenuLoading;
   const isOwner = user && mess && user.id === mess.owner_id;
-  const isStudent = profile?.role === 'student';
+  const isStudent = profile?.role === "student";
 
   if (isLoading) {
     return (
@@ -134,23 +165,39 @@ const MessDetailPage = () => {
 
   const error = messError || menuError;
   if (error) {
-    return <div className="container py-8 text-center text-xl text-destructive">Error: {(error as Error).message}</div>;
+    return (
+      <div className="container py-8 text-center text-xl text-destructive">
+        Error: {(error as Error).message}
+      </div>
+    );
   }
 
   if (!mess) {
-    return <div className="container py-8 text-center text-xl">Mess not found.</div>;
+    return (
+      <div className="container py-8 text-center text-xl">Mess not found.</div>
+    );
   }
 
   return (
     <div className="container py-8">
       <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2">
-          <img src={mess.image_url || '/placeholder.svg'} alt={mess.name} className="w-full h-96 object-cover rounded-lg shadow-lg mb-6" />
+          <img
+            src={mess.image_url || "/placeholder.svg"}
+            alt={mess.name}
+            className="w-full h-96 object-cover rounded-lg shadow-lg mb-6"
+          />
           <h1 className="text-4xl font-bold text-primary mb-2">{mess.name}</h1>
           <div className="flex flex-wrap items-center text-muted-foreground mb-4 gap-x-3 gap-y-1">
             <div className="flex items-center">
-              <Star className="w-5 h-5 text-yellow-400 mr-1" fill="currentColor" />
-              <span>{mess.rating?.toFixed(1) || 'N/A'} ({mess.review_count || 0} reviews)</span>
+              <Star
+                className="w-5 h-5 text-yellow-400 mr-1"
+                fill="currentColor"
+              />
+              <span>
+                {mess.rating?.toFixed(1) || "N/A"} ({mess.review_count || 0}{" "}
+                reviews)
+              </span>
             </div>
             <Separator orientation="vertical" className="h-5" />
             <div className="flex items-center">
@@ -162,13 +209,16 @@ const MessDetailPage = () => {
 
           <Card className="mb-6">
             <CardHeader>
-               <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center">
                   <Utensils className="w-6 h-6 mr-2 text-primary" />
                   Weekly Menu
                 </CardTitle>
                 {isOwner && (
-                  <Dialog open={isMenuDialogOpen} onOpenChange={setIsMenuDialogOpen}>
+                  <Dialog
+                    open={isMenuDialogOpen}
+                    onOpenChange={setIsMenuDialogOpen}
+                  >
                     <DialogTrigger asChild>
                       <Button variant="outline">Edit Menu</Button>
                     </DialogTrigger>
@@ -176,11 +226,17 @@ const MessDetailPage = () => {
                       <DialogHeader>
                         <DialogTitle>Manage Weekly Menu</DialogTitle>
                         <DialogDescription>
-                          Update the breakfast, lunch, and dinner options for each day. Click save when you're done.
+                          Update the breakfast, lunch, and dinner options for
+                          each day. Click save when you're done.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="max-h-[70vh] overflow-y-auto p-1 pr-2">
-                        {id && <AddMenuForm messId={id} onSuccess={() => setIsMenuDialogOpen(false)} />}
+                        {id && (
+                          <AddMenuForm
+                            messId={id}
+                            onSuccess={() => setIsMenuDialogOpen(false)}
+                          />
+                        )}
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -192,17 +248,34 @@ const MessDetailPage = () => {
                 <div className="space-y-4">
                   {orderedMenu.map((dayMenu) => (
                     <div key={dayMenu.day}>
-                      <h4 className="font-semibold text-md text-primary mb-1">{dayMenu.day}</h4>
+                      <h4 className="font-semibold text-md text-primary mb-1">
+                        {dayMenu.day}
+                      </h4>
                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 pl-2">
-                        {dayMenu.breakfast && <li><strong>Breakfast:</strong> {dayMenu.breakfast}</li>}
-                        {dayMenu.lunch && <li><strong>Lunch:</strong> {dayMenu.lunch}</li>}
-                        {dayMenu.dinner && <li><strong>Dinner:</strong> {dayMenu.dinner}</li>}
+                        {dayMenu.breakfast && (
+                          <li>
+                            <strong>Breakfast:</strong> {dayMenu.breakfast}
+                          </li>
+                        )}
+                        {dayMenu.lunch && (
+                          <li>
+                            <strong>Lunch:</strong> {dayMenu.lunch}
+                          </li>
+                        )}
+                        {dayMenu.dinner && (
+                          <li>
+                            <strong>Dinner:</strong> {dayMenu.dinner}
+                          </li>
+                        )}
                       </ul>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">Menu not available yet. {isOwner && "Click 'Edit Menu' to add it."}</p>
+                <p className="text-muted-foreground">
+                  Menu not available yet.{" "}
+                  {isOwner && "Click 'Edit Menu' to add it."}
+                </p>
               )}
             </CardContent>
           </Card>
@@ -253,42 +326,68 @@ const MessDetailPage = () => {
                 )}
               </div>
               <Separator className="my-3" />
-               {!user && (
-                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-lg py-6">
+              {!user && (
+                <Button
+                  asChild
+                  className="w-full bg-primary hover:bg-primary/90 text-lg py-6"
+                >
                   <Link to="/auth">Login to Subscribe</Link>
                 </Button>
-               )}
-               {user && isOwner && (
-                <Button className="w-full text-lg py-6" disabled>You are the owner</Button>
-               )}
-               {user && !isOwner && !isStudent && (
-                 <Button className="w-full text-lg py-6" disabled>Only students can subscribe</Button>
-               )}
-               {user && isStudent && !userSubscription && (
-                 <Dialog open={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="w-full bg-primary hover:bg-primary/90 text-lg py-6">Subscribe Now</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Subscribe to {mess.name}</DialogTitle>
-                        <DialogDescription>
-                          Upload your payment proof to request a subscription. The owner will verify it.
-                        </DialogDescription>
-                      </DialogHeader>
-                      {id && <SubscriptionForm messId={id} onSuccess={() => setIsSubscriptionDialogOpen(false)} />}
-                    </DialogContent>
-                  </Dialog>
-               )}
-               {user && isStudent && userSubscription && (
-                  <Button className="w-full bg-green-500 hover:bg-green-600 text-lg py-6" disabled>
-                    <CheckCircle className="mr-2" />
-                    Subscribed
-                  </Button>
-               )}
-               <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
+              )}
+              {user && isOwner && (
+                <Button className="w-full text-lg py-6" disabled>
+                  You are the owner
+                </Button>
+              )}
+              {user && !isOwner && !isStudent && (
+                <Button className="w-full text-lg py-6" disabled>
+                  Only students can subscribe
+                </Button>
+              )}
+              {user && isStudent && !userSubscription && (
+                <Dialog
+                  open={isSubscriptionDialogOpen}
+                  onOpenChange={setIsSubscriptionDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-lg py-6">
+                      Subscribe Now
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Subscribe to {mess.name}</DialogTitle>
+                      <DialogDescription>
+                        Upload your payment proof to request a subscription. The
+                        owner will verify it.
+                      </DialogDescription>
+                    </DialogHeader>
+                    {id && (
+                      <SubscriptionForm
+                        messId={id}
+                        onSuccess={() => setIsSubscriptionDialogOpen(false)}
+                      />
+                    )}
+                  </DialogContent>
+                </Dialog>
+              )}
+              {user && isStudent && userSubscription && (
+                <Button
+                  className="w-full bg-green-500 hover:bg-green-600 text-lg py-6"
+                  disabled
+                >
+                  <CheckCircle className="mr-2" />
+                  Subscribed
+                </Button>
+              )}
+              <Dialog
+                open={isContactDialogOpen}
+                onOpenChange={setIsContactDialogOpen}
+              >
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full">Contact Mess</Button>
+                  <Button variant="outline" className="w-full">
+                    Contact Mess
+                  </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
@@ -299,39 +398,62 @@ const MessDetailPage = () => {
                   </DialogHeader>
                   <div className="py-4 space-y-2">
                     <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-primary"/>
-                        <a href={`tel:${mess.contact}`} className="text-primary hover:underline">{mess.contact}</a>
+                      <Phone className="h-4 w-4 text-primary" />
+                      <a
+                        href={`tel:${mess.contact}`}
+                        className="text-primary hover:underline"
+                      >
+                        {mess.contact}
+                      </a>
                     </div>
                     <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-primary"/>
-                        <span>{mess.address}</span>
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <span>{mess.address}</span>
                     </div>
                   </div>
                 </DialogContent>
-               </Dialog>
+              </Dialog>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-lg">Mess Details</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-lg">Mess Details</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="flex items-center">
                 <Phone className="w-4 h-4 mr-2 text-primary" />
-                <span className="text-muted-foreground">Contact: {mess.contact}</span>
+                <span className="text-muted-foreground">
+                  Contact: {mess.contact}
+                </span>
               </div>
               <div className="flex items-center">
                 <Clock className="w-4 h-4 mr-2 text-primary" />
-                <span className="text-muted-foreground">Hours: {mess.operating_hours}</span>
+                <span className="text-muted-foreground">
+                  Hours: {mess.operating_hours}
+                </span>
               </div>
               <div className="flex items-center">
-                {mess.offers_delivery ? <CheckCircle className="w-4 h-4 mr-2 text-green-500" /> : <XCircle className="w-4 h-4 mr-2 text-red-500" />}
-                <span className="text-muted-foreground">{mess.offers_delivery ? "Delivery Available" : "Delivery Not Available"}</span>
-                 {mess.offers_delivery && <Truck className="w-4 h-4 ml-auto text-secondary" />}
+                {mess.offers_delivery ? (
+                  <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                ) : (
+                  <XCircle className="w-4 h-4 mr-2 text-red-500" />
+                )}
+                <span className="text-muted-foreground">
+                  {mess.offers_delivery
+                    ? "Delivery Available"
+                    : "Delivery Not Available"}
+                </span>
+                {mess.offers_delivery && (
+                  <Truck className="w-4 h-4 ml-auto text-secondary" />
+                )}
               </div>
               <div className="pt-2">
                 <h5 className="font-medium mb-1">Cuisine:</h5>
                 {mess.cuisine?.map((c) => (
-                  <Badge key={c} variant="secondary" className="mr-1 mb-1">{c}</Badge>
+                  <Badge key={c} variant="secondary" className="mr-1 mb-1">
+                    {c}
+                  </Badge>
                 ))}
               </div>
             </CardContent>

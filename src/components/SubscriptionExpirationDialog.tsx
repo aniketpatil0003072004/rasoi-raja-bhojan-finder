@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -8,14 +8,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useAuth } from '@/contexts/AuthContext';
-import { useSubscriptionExpiration, markSubscriptionNotified, ExpiringSubscription } from '@/hooks/useSubscriptionExpiration';
-import { format } from 'date-fns';
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  useSubscriptionExpiration,
+  markSubscriptionNotified,
+  ExpiringSubscription,
+} from "@/hooks/useSubscriptionExpiration";
+import { format } from "date-fns";
 
 export const SubscriptionExpirationDialog = () => {
-  const { user } = useAuth();
+  const userData = localStorage.getItem("user");
+  const user = JSON.parse(userData);
   const { data: expiringSubscriptions } = useSubscriptionExpiration(7);
-  const [currentNotification, setCurrentNotification] = useState<ExpiringSubscription | null>(null);
+  const [currentNotification, setCurrentNotification] =
+    useState<ExpiringSubscription | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -42,26 +48,32 @@ export const SubscriptionExpirationDialog = () => {
 
   if (!currentNotification) return null;
 
-  const isOwner = currentNotification.mess_id && user?.id !== currentNotification.user_id;
+  const isOwner =
+    currentNotification.mess_id && user?.id !== currentNotification.user_id;
   const daysLeft = currentNotification.days_until_expiry;
-  const expirationDate = format(new Date(currentNotification.end_date), 'PPP');
+  const expirationDate = format(new Date(currentNotification.end_date), "PPP");
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {isOwner ? 'Student Subscription Expiring' : 'Your Subscription is Expiring'}
+            {isOwner
+              ? "Student Subscription Expiring"
+              : "Your Subscription is Expiring"}
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-2">
             {isOwner ? (
               <>
                 <p>
-                  <strong>{currentNotification.profiles?.full_name}</strong>'s subscription to{' '}
-                  <strong>{currentNotification.messes?.name}</strong> is expiring soon.
+                  <strong>{currentNotification.profiles?.full_name}</strong>'s
+                  subscription to{" "}
+                  <strong>{currentNotification.messes?.name}</strong> is
+                  expiring soon.
                 </p>
                 <p>
-                  Days remaining: <strong className="text-destructive">{daysLeft} days</strong>
+                  Days remaining:{" "}
+                  <strong className="text-destructive">{daysLeft} days</strong>
                 </p>
                 <p>Expiration date: {expirationDate}</p>
                 <p className="text-sm text-muted-foreground">
@@ -71,23 +83,25 @@ export const SubscriptionExpirationDialog = () => {
             ) : (
               <>
                 <p>
-                  Your subscription to <strong>{currentNotification.messes?.name}</strong> is expiring soon.
+                  Your subscription to{" "}
+                  <strong>{currentNotification.messes?.name}</strong> is
+                  expiring soon.
                 </p>
                 <p>
-                  Days remaining: <strong className="text-destructive">{daysLeft} days</strong>
+                  Days remaining:{" "}
+                  <strong className="text-destructive">{daysLeft} days</strong>
                 </p>
                 <p>Expiration date: {expirationDate}</p>
                 <p className="text-sm text-muted-foreground">
-                  Please renew your subscription to continue enjoying the service.
+                  Please renew your subscription to continue enjoying the
+                  service.
                 </p>
               </>
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogAction onClick={handleClose}>
-            Got it
-          </AlertDialogAction>
+          <AlertDialogAction onClick={handleClose}>Got it</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

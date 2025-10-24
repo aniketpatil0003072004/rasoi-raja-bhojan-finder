@@ -1,13 +1,13 @@
-
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { DeliveryWithDetails } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { DeliveryWithDetails } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 const fetchPublicDeliveries = async (): Promise<DeliveryWithDetails[]> => {
   const { data, error } = await supabase
-    .from('deliveries')
-    .select(`
+    .from("deliveries")
+    .select(
+      `
       *,
       subscriptions (
         profiles (
@@ -19,10 +19,11 @@ const fetchPublicDeliveries = async (): Promise<DeliveryWithDetails[]> => {
         name,
         address
       )
-    `)
-    .is('delivery_person_id', null)
-    .eq('status', 'pending_assignment')
-    .order('created_at', { ascending: true });
+    `
+    )
+    .is("delivery_person_id", null)
+    .eq("status", "pending_assignment")
+    .order("created_at", { ascending: true });
 
   if (error) {
     throw new Error(error.message);
@@ -32,10 +33,11 @@ const fetchPublicDeliveries = async (): Promise<DeliveryWithDetails[]> => {
 };
 
 export const usePublicDeliveries = () => {
-    const { user } = useAuth();
-    return useQuery({
-        queryKey: ['publicDeliveries'],
-        queryFn: fetchPublicDeliveries,
-        enabled: !!user,
-    });
+  const userData = localStorage.getItem("user");
+  const user = JSON.parse(userData);
+  return useQuery({
+    queryKey: ["publicDeliveries"],
+    queryFn: fetchPublicDeliveries,
+    enabled: !!user,
+  });
 };

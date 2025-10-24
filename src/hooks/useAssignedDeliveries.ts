@@ -1,13 +1,13 @@
-
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { DeliveryWithDetails } from '@/types';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { DeliveryWithDetails } from "@/types";
 
 const fetchAssignedDeliveries = async (userId: string) => {
   const { data, error } = await supabase
-    .from('deliveries')
-    .select(`
+    .from("deliveries")
+    .select(
+      `
       *,
       subscriptions (
         profiles (
@@ -19,10 +19,11 @@ const fetchAssignedDeliveries = async (userId: string) => {
         name,
         address
       )
-    `)
-    .eq('delivery_person_id', userId)
-    .neq('status', 'delivered')
-    .order('created_at', { ascending: true });
+    `
+    )
+    .eq("delivery_person_id", userId)
+    .neq("status", "delivered")
+    .order("created_at", { ascending: true });
 
   if (error) {
     throw new Error(error.message);
@@ -32,10 +33,11 @@ const fetchAssignedDeliveries = async (userId: string) => {
 };
 
 export const useAssignedDeliveries = () => {
-  const { user } = useAuth();
+  const userData = localStorage.getItem("user");
+  const user = JSON.parse(userData);
 
   return useQuery({
-    queryKey: ['assignedDeliveries', user?.id],
+    queryKey: ["assignedDeliveries", user?.id],
     queryFn: () => {
       if (!user) throw new Error("User not authenticated");
       return fetchAssignedDeliveries(user.id);

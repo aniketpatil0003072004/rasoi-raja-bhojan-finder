@@ -22,31 +22,54 @@ import { useToast } from "@/components/ui/use-toast";
 import { TablesInsert } from "@/integrations/supabase/types";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+];
 
 const messFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
-  description: z.string().min(10, "Description must be at least 10 characters."),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters."),
   address: z.string().min(5, "Address is required."),
   monthly_price: z.coerce.number().positive("Price must be a positive number."),
   contact: z.string().min(10, "Contact number is required."),
   operating_hours: z.string().min(5, "Operating hours are required."),
   offers_delivery: z.boolean().default(false),
-  cuisine: z.string().transform(val => val.split(',').map(s => s.trim()).filter(Boolean)),
-  image: z.custom<FileList>()
+  cuisine: z.string().transform((val) =>
+    val
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+  ),
+  image: z
+    .custom<FileList>()
     .optional()
-    .refine((files) => !files || files.length === 0 || files[0].size <= MAX_FILE_SIZE, {
+    .refine(
+      (files) => !files || files.length === 0 || files[0].size <= MAX_FILE_SIZE,
+      {
         message: `Max file size is 5MB.`,
-    })
-    .refine((files) => !files || files.length === 0 || ACCEPTED_IMAGE_TYPES.includes(files[0].type), {
+      }
+    )
+    .refine(
+      (files) =>
+        !files ||
+        files.length === 0 ||
+        ACCEPTED_IMAGE_TYPES.includes(files[0].type),
+      {
         message: ".jpg, .jpeg, .png and .webp files are accepted.",
-    }),
+      }
+    ),
 });
 
 type MessFormValues = z.infer<typeof messFormSchema>;
 
 const AddMessForm = () => {
-  const { user } = useAuth();
+  const userData = localStorage.getItem("user");
+  const user = JSON.parse(userData);
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -74,8 +97,10 @@ const AddMessForm = () => {
 
       if (imageFile) {
         const fileName = `${user.id}/${Date.now()}-${imageFile.name}`;
+        console.log(fileName);
+
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('mess_images')
+          .from("mess_images")
           .upload(fileName, imageFile);
 
         if (uploadError) {
@@ -83,13 +108,15 @@ const AddMessForm = () => {
         }
 
         const { data: publicUrlData } = supabase.storage
-          .from('mess_images')
+          .from("mess_images")
           .getPublicUrl(uploadData.path);
 
         imageUrl = publicUrlData.publicUrl;
       }
 
-      const messData: Omit<TablesInsert<'messes'>, 'owner_id'> & { owner_id: string } = {
+      const messData: Omit<TablesInsert<"messes">, "owner_id"> & {
+        owner_id: string;
+      } = {
         name: values.name,
         description: values.description,
         address: values.address,
@@ -103,7 +130,7 @@ const AddMessForm = () => {
       };
 
       const { data, error } = await supabase
-        .from('messes')
+        .from("messes")
         .insert(messData)
         .select()
         .single();
@@ -116,8 +143,8 @@ const AddMessForm = () => {
         title: "Success!",
         description: "Your mess has been added.",
       });
-      queryClient.invalidateQueries({ queryKey: ['messes'] });
-      queryClient.invalidateQueries({ queryKey: ['featuredMesses'] });
+      queryClient.invalidateQueries({ queryKey: ["messes"] });
+      queryClient.invalidateQueries({ queryKey: ["featuredMesses"] });
       navigate(`/mess/${data.id}`);
     },
     onError: (error) => {
@@ -126,7 +153,7 @@ const AddMessForm = () => {
         description: `Failed to add mess: ${error.message}`,
         variant: "destructive",
       });
-    }
+    },
   });
 
   function onSubmit(values: MessFormValues) {
@@ -142,7 +169,9 @@ const AddMessForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Mess Name</FormLabel>
-              <FormControl><Input placeholder="e.g. Aunty's Kitchen" {...field} /></FormControl>
+              <FormControl>
+                <Input placeholder="e.g. Aunty's Kitchen" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -153,7 +182,12 @@ const AddMessForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Description</FormLabel>
-              <FormControl><Textarea placeholder="Tell us about your delicious home-style food" {...field} /></FormControl>
+              <FormControl>
+                <Textarea
+                  placeholder="Tell us about your delicious home-style food"
+                  {...field}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -164,7 +198,9 @@ const AddMessForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Address</FormLabel>
-              <FormControl><Input placeholder="Full address" {...field} /></FormControl>
+              <FormControl>
+                <Input placeholder="Full address" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -175,7 +211,9 @@ const AddMessForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Monthly Price (INR)</FormLabel>
-              <FormControl><Input type="number" {...field} /></FormControl>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -186,7 +224,9 @@ const AddMessForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Contact Number</FormLabel>
-              <FormControl><Input placeholder="Your phone number" {...field} /></FormControl>
+              <FormControl>
+                <Input placeholder="Your phone number" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -197,7 +237,9 @@ const AddMessForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Operating Hours</FormLabel>
-              <FormControl><Input placeholder="e.g. 9:00 AM - 10:00 PM" {...field} /></FormControl>
+              <FormControl>
+                <Input placeholder="e.g. 9:00 AM - 10:00 PM" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -208,8 +250,17 @@ const AddMessForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cuisine Types</FormLabel>
-              <FormControl><Input placeholder="e.g. North Indian, South Indian" {...field} value={field.value as unknown as string} onChange={e => field.onChange(e.target.value)} /></FormControl>
-              <FormDescription>Please provide a comma-separated list of cuisines.</FormDescription>
+              <FormControl>
+                <Input
+                  placeholder="e.g. North Indian, South Indian"
+                  {...field}
+                  value={field.value as unknown as string}
+                  onChange={(e) => field.onChange(e.target.value)}
+                />
+              </FormControl>
+              <FormDescription>
+                Please provide a comma-separated list of cuisines.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -221,16 +272,18 @@ const AddMessForm = () => {
             <FormItem>
               <FormLabel>Mess Image</FormLabel>
               <FormControl>
-                <Input 
-                  type="file" 
-                  accept="image/png, image/jpeg, image/jpg, image/webp" 
+                <Input
+                  type="file"
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
                   onChange={(e) => {
                     onChange(e.target.files);
                   }}
                   {...rest}
                 />
               </FormControl>
-              <FormDescription>Upload an image for your mess (optional, max 5MB).</FormDescription>
+              <FormDescription>
+                Upload an image for your mess (optional, max 5MB).
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -256,7 +309,7 @@ const AddMessForm = () => {
           )}
         />
         <Button type="submit" disabled={addMessMutation.isPending}>
-          {addMessMutation.isPending ? 'Submitting...' : 'Add My Mess'}
+          {addMessMutation.isPending ? "Submitting..." : "Add My Mess"}
         </Button>
       </form>
     </Form>

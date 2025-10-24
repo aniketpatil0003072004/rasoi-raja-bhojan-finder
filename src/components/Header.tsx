@@ -25,7 +25,6 @@ import { Profile } from "@/types";
 import NotificationBell from "./NotificationBell";
 
 const Header = () => {
-  // const { user, signOut, loading: authLoading } = useAuth();
   const user = localStorage.getItem("user");
   let userData;
 

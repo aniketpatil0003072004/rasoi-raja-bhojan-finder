@@ -1,6 +1,4 @@
-
-import React from 'react';
-import MySubscriptions from '@/components/MySubscriptions';
+import MySubscriptions from "@/components/MySubscriptions";
 
 const MySubscriptionsPage = () => {
   return (

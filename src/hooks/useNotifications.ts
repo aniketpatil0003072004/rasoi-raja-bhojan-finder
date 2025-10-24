@@ -1,16 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { DeliveryNotification } from '@/types';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { DeliveryNotification } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 const fetchNotifications = async (userId: string) => {
   const { data, error } = await supabase
-    .from('delivery_notifications')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .from("delivery_notifications")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
     .limit(50);
 
   if (error) {
@@ -22,9 +22,9 @@ const fetchNotifications = async (userId: string) => {
 
 const markNotificationAsRead = async (notificationId: string) => {
   const { error } = await supabase
-    .from('delivery_notifications')
+    .from("delivery_notifications")
     .update({ is_read: true })
-    .eq('id', notificationId);
+    .eq("id", notificationId);
 
   if (error) {
     throw new Error(error.message);
@@ -32,16 +32,17 @@ const markNotificationAsRead = async (notificationId: string) => {
 };
 
 export const useNotifications = () => {
-  const { user } = useAuth();
+  const userData = localStorage.getItem("user");
+  const user = JSON.parse(userData);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const {
     data: notifications,
     isLoading,
-    error
+    error,
   } = useQuery({
-    queryKey: ['notifications', user?.id],
+    queryKey: ["notifications", user?.id],
     queryFn: () => {
       if (!user) throw new Error("User not authenticated");
       return fetchNotifications(user.id);
@@ -53,7 +54,7 @@ export const useNotifications = () => {
   const markAsReadMutation = useMutation({
     mutationFn: markNotificationAsRead,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
     },
   });
 
@@ -62,18 +63,18 @@ export const useNotifications = () => {
     if (!user) return;
 
     const channel = supabase
-      .channel('notifications-changes')
+      .channel("notifications-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'delivery_notifications',
-          filter: `user_id=eq.${user.id}`
+          event: "INSERT",
+          schema: "public",
+          table: "delivery_notifications",
+          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           const newNotification = payload.new as DeliveryNotification;
-          
+
           // Show toast notification
           toast({
             title: "Delivery Update",
@@ -82,10 +83,13 @@ export const useNotifications = () => {
           });
 
           // Update query cache
-          queryClient.setQueryData(['notifications', user.id], (old: DeliveryNotification[] | undefined) => {
-            if (!old) return [newNotification];
-            return [newNotification, ...old];
-          });
+          queryClient.setQueryData(
+            ["notifications", user.id],
+            (old: DeliveryNotification[] | undefined) => {
+              if (!old) return [newNotification];
+              return [newNotification, ...old];
+            }
+          );
         }
       )
       .subscribe();
@@ -95,7 +99,7 @@ export const useNotifications = () => {
     };
   }, [user, toast, queryClient]);
 
-  const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
+  const unreadCount = notifications?.filter((n) => !n.is_read).length || 0;
 
   return {
     notifications: notifications || [],
@@ -103,6 +107,6 @@ export const useNotifications = () => {
     isLoading,
     error,
     markAsRead: markAsReadMutation.mutate,
-    isMarkingAsRead: markAsReadMutation.isPending
+    isMarkingAsRead: markAsReadMutation.isPending,
   };
 };

@@ -12,7 +12,8 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const [authLoading, setAuthLoading] = useState(false);
-  const userName = localStorage.getItem("user");
+  const userName = localStorage.getItem("username");
+
   const location = useLocation();
 
   const fetchProfile = async () => {
@@ -40,7 +41,6 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     queryKey: ["userProfileRole", userName],
     queryFn: fetchProfile,
     enabled: !!userName,
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const isLoading = authLoading || (!!userName && profileLoading);
