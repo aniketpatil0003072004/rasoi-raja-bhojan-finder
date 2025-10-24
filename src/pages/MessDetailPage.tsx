@@ -65,7 +65,7 @@ const MessDetailPage = () => {
 
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
     const { data, error } = await supabase
-      .from("profiles")
+      .from("user")
       .select("*")
       .eq("id", userId)
       .single();
@@ -116,7 +116,7 @@ const MessDetailPage = () => {
   });
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", user?.id],
+    queryKey: ["user", user?.id],
     queryFn: () => fetchProfile(user!.id),
     enabled: !!user,
   });
@@ -144,6 +144,7 @@ const MessDetailPage = () => {
   const isLoading = isMessLoading || isMenuLoading;
   const isOwner = user && mess && user.id === mess.owner_id;
   const isStudent = profile?.role === "student";
+  console.log(isStudent);
 
   if (isLoading) {
     return (
@@ -349,7 +350,7 @@ const MessDetailPage = () => {
                   asChild
                   className="w-full bg-primary hover:bg-primary/90 text-lg py-6"
                 >
-                  <Link to="/auth">Login to Subscribe</Link>
+                  <Link to="/auth/sign-in">Login to Subscribe</Link>
                 </Button>
               )}
               {user && isOwner && (
