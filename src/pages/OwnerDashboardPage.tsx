@@ -11,7 +11,7 @@ const OwnerDashboardPage = () => {
   return (
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-6">Owner Dashboard</h1>
-      <Tabs defaultValue="mess" className="w-full">
+      <Tabs defaultValue="active" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="mess">Mess Management</TabsTrigger>
