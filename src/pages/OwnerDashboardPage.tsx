@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import ActiveSubscriptions from "@/components/ActiveSubscriptions";
 import DeliveryManagement from "@/components/DeliveryManagement";
@@ -6,11 +6,60 @@ import MessManagement from "@/components/MessManagement";
 import { OwnerMealSkipsView } from "@/components/OwnerMealSkipsView";
 import { OwnerCancellationTimer } from "@/components/OwnerCancellationTimer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const OwnerDashboardPage = () => {
   const [todayBreakfast, setTodayBreakfast] = useState("");
   const [todayLunch, setTodayLunch] = useState("");
   const [todayDinner, setTodayDinner] = useState("");
+  const userData = localStorage.getItem("user");
+  const user = JSON.parse(userData);
+  const [messId, setMessId] = useState("");
+
+  useEffect(() => {
+    const fetchMessData = async () => {
+      const { data: mess_id, error: messError } = await supabase
+        .from("messes")
+        .select("id")
+        .eq("owner_id", user.id)
+        .single();
+      setMessId(mess_id.id);
+    };
+    fetchMessData();
+  }, []);
+
+  useEffect(() => {
+    const fetchMealData = async () => {
+      const { data, error } = await supabase
+        .from("today_meals")
+        .select("*")
+        .eq("mess_id", messId)
+        .single();
+      console.log(data);
+
+      setTodayBreakfast(data.breakfast);
+      setTodayLunch(data.lunch);
+      setTodayDinner(data.dinner);
+    };
+    fetchMealData();
+  }, [messId]);
+
+  const handleAddTodaysMeal = async (mealType, meal) => {
+    if (!meal) {
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("today_meals")
+      .upsert({ mess_id: messId, [mealType]: meal }, { onConflict: "mess_id" });
+
+    if (error) {
+      toast.error("Error updating meal: " + error.message);
+    } else {
+      toast.success("Meal updated successfully!");
+    }
+  };
 
   return (
     <div className="container py-8">
@@ -20,7 +69,10 @@ const OwnerDashboardPage = () => {
           <label htmlFor="today_meal">Add Today's Meal</label>
           <div className="flex flex-row gap-2">
             <input
-              onBlur={(e) => setTodayBreakfast(e.target.value)}
+              onBlur={(e) => {
+                setTodayBreakfast(e.target.value);
+                handleAddTodaysMeal("breakfast", e.target.value);
+              }}
               type="text"
               autoFocus
               className="border-[1px] border-black placeholder:text-sm rounded-md w-[300px] focus:outline-gray-500 px-4 py-2 "
@@ -28,15 +80,19 @@ const OwnerDashboardPage = () => {
             />
             <input
               type="text"
-              onBlur={(e) => setTodayLunch(e.target.value)}
-              autoFocus
+              onBlur={(e) => {
+                setTodayLunch(e.target.value);
+                handleAddTodaysMeal("lunch", e.target.value);
+              }}
               className="border-[1px] border-black placeholder:text-sm rounded-md w-[300px] focus:outline-gray-500 px-4 py-2 "
               placeholder="Add Lunch"
             />
             <input
               type="text"
-              onBlur={(e) => setTodayDinner(e.target.value)}
-              autoFocus
+              onBlur={(e) => {
+                setTodayDinner(e.target.value);
+                handleAddTodaysMeal("dinner", e.target.value);
+              }}
               className="border-[1px] border-black placeholder:text-sm rounded-md w-[300px] focus:outline-gray-500 px-4 py-2 "
               placeholder="Add Dinner"
             />
