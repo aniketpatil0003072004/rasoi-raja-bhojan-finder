@@ -36,33 +36,11 @@ import { MealSkipForm } from "./MealSkipForm";
 import { MealSkipsList } from "./MealSkipsList";
 import { MealCancellationTimer } from "./MealCancellationTimer";
 
-const MySubscriptions = () => {
-  const userData = localStorage.getItem("user");
-  let user;
-  if (userData) {
-    user = JSON.parse(userData);
-  }
+const MySubscriptions = ({ subscriptions }) => {
   const [viewingConfirmation, setViewingConfirmation] = React.useState<{
     url: string;
     messName: string;
   } | null>(null);
-
-  const fetchUserSubscriptions = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .select("*, messes(name, cancellation_deadline_time)")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (error) throw new Error(error.message);
-    return data || [];
-  };
-
-  const { data: subscriptions, isLoading } = useQuery({
-    queryKey: ["mySubscriptions", user?.id],
-    queryFn: () => fetchUserSubscriptions(user!.id),
-    enabled: !!user,
-  });
 
   const handleViewConfirmation = async (filePath: string, messName: string) => {
     const { data, error } = await supabase.storage
@@ -123,13 +101,7 @@ const MySubscriptions = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        ) : !subscriptions || subscriptions.length === 0 ? (
+        {!subscriptions || subscriptions.length === 0 ? (
           <Alert>
             <Info className="h-4 w-4" />
             <AlertTitle>No Subscriptions Found</AlertTitle>
