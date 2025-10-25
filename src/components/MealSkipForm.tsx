@@ -40,6 +40,9 @@ export const MealSkipForm = ({
     useState<string>("23:00");
   const { createMealSkip } = useMealSkips(subscriptionId);
 
+  console.log(cancellationDeadlineTime);
+  const lastCancelTime = cancellationDeadlineTime.split(":")[0];
+
   const getISTDate = () => {
     return new Date(
       new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
@@ -72,7 +75,7 @@ export const MealSkipForm = ({
       availableMeals.push("breakfast", "lunch", "dinner");
     } else if (currentHour >= 9 && currentHour < 14) {
       availableMeals.push("lunch", "dinner");
-    } else if (currentHour >= 14 && currentHour < 20) {
+    } else if (currentHour >= 14 && currentHour < Number(lastCancelTime)) {
       availableMeals.push("dinner");
     }
 

@@ -10,13 +10,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, IndianRupee } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -26,12 +26,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Mess } from "@/types";
 
 const subscriptionSchema = z.object({
   fullName: z.string().min(1, "Full name is required."),
   address: z.string().min(1, "Address is required."),
-  phoneNumber: z.string().min(1, "Phone number is required."),
+  phoneNumber: z
+    .string()
+    .min(10, "Phone number must be at least 10 digits.")
+    .regex(/^[0-9]+$/, "Phone number must contain only digits."),
   planDuration: z.string().min(1, "Please select a plan duration."),
   paymentProof: z
     .instanceof(FileList)
@@ -39,24 +41,50 @@ const subscriptionSchema = z.object({
       (files) => files !== undefined && files.length > 0,
       "Payment proof is required."
     )
-    .refine((files) => files?.length === 1, "Payment proof is required."),
+    .refine((files) => {
+      if (!files || files.length === 0) return false;
+      const file = files[0];
+      const validTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "application/pdf",
+      ];
+      return validTypes.includes(file.type);
+    }, "Only JPG, PNG, WEBP, or PDF files are allowed.")
+    .refine((files) => {
+      if (!files || files.length === 0) return false;
+      const file = files[0];
+      return file.size <= 5 * 1024 * 1024; // 5MB
+    }, "File size must be less than 5MB."),
 });
 
 type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
 
+interface PricingPlan {
+  months: number;
+  price: number;
+}
+
 interface SubscriptionFormProps {
   messId: string;
+  pricingPlans: PricingPlan[];
   onSuccess: () => void;
 }
 
 const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
   messId,
+  pricingPlans,
   onSuccess,
 }) => {
   const userData = localStorage.getItem("user");
-  const user = JSON.parse(userData);
+  const user = userData ? JSON.parse(userData) : null;
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [selectedPlan, setSelectedPlan] = React.useState<PricingPlan | null>(
+    null
+  );
 
   const fetchProfile = async () => {
     if (!user) return null;
@@ -72,28 +100,10 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     return data;
   };
 
-  const fetchMess = async () => {
-    const { data, error } = await supabase
-      .from("messes")
-      .select("*")
-      .eq("id", messId)
-      .single();
-    if (error) {
-      console.error("Error fetching mess:", error);
-      toast.error("Could not load mess data.");
-    }
-    return data;
-  };
-
   const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ["user", user?.id],
     queryFn: fetchProfile,
     enabled: !!user,
-  });
-
-  const { data: mess, isLoading: isMessLoading } = useQuery({
-    queryKey: ["mess", messId],
-    queryFn: fetchMess,
   });
 
   const form = useForm<SubscriptionFormValues>({
@@ -117,106 +127,108 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     }
   }, [profile, form]);
 
-  const availablePlans = React.useMemo(() => {
-    if (!mess) return [];
-    const plans = [];
-    if (mess.price_1_month)
-      plans.push({ duration: 1, price: mess.price_1_month });
-    if (mess.price_2_months)
-      plans.push({ duration: 2, price: mess.price_2_months });
-    if (mess.price_3_months)
-      plans.push({ duration: 3, price: mess.price_3_months });
-    if (mess.price_6_months)
-      plans.push({ duration: 6, price: mess.price_6_months });
-    return plans;
-  }, [mess]);
+  const handlePlanChange = (value: string) => {
+    const months = parseInt(value);
+    const plan = pricingPlans.find((p) => p.months === months);
+    setSelectedPlan(plan || null);
+    form.setValue("planDuration", value);
+  };
 
   const onSubmit = async (values: SubscriptionFormValues) => {
     if (!user) {
       toast.error("You must be logged in to subscribe.");
       return;
     }
-    setIsSubmitting(true);
-
-    const { error: profileError } = await supabase
-      .from("user")
-      .update({
-        full_name: values.fullName,
-        address: values.address,
-        phone_number: values.phoneNumber,
-      })
-      .eq("id", user.id);
-
-    if (profileError) {
-      console.error("Profile update error:", profileError);
-      toast.error("Failed to update your profile.", {
-        description: profileError.message,
-      });
-      setIsSubmitting(false);
-      return;
-    }
-    queryClient.invalidateQueries({ queryKey: ["user", user.id] });
-
-    const file = values.paymentProof[0];
-    const filePath = `${messId}/${user.id}/${Date.now()}-${file.name}`;
-
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("payment_proofs")
-      .upload(filePath, file);
-
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      toast.error("Failed to upload payment proof.", {
-        description:
-          "This may be due to missing storage permissions. Please try again later.",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    const planDurationMonths = parseInt(values.planDuration);
-    const selectedPlan = availablePlans.find(
-      (p) => p.duration === planDurationMonths
-    );
 
     if (!selectedPlan) {
-      toast.error("Invalid plan selected.");
-      setIsSubmitting(false);
+      toast.error("Please select a plan.");
       return;
     }
 
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setMonth(startDate.getMonth() + planDurationMonths);
+    setIsSubmitting(true);
 
-    const { error: subscriptionError } = await supabase
-      .from("subscriptions")
-      .insert({
-        user_id: user.id,
-        mess_id: messId,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        payment_screenshot_url: uploadData.path,
-        status: "pending_owner_confirmation",
-        plan_duration_months: planDurationMonths,
-        plan_price: selectedPlan.price,
-      });
+    try {
+      // Update user profile
+      const { error: profileError } = await supabase
+        .from("user")
+        .update({
+          full_name: values.fullName,
+          address: values.address,
+          phone_number: values.phoneNumber,
+        })
+        .eq("id", user.id);
 
-    if (subscriptionError) {
-      console.error("Subscription error:", subscriptionError);
-      toast.error("Failed to create subscription.", {
-        description: subscriptionError.message,
-      });
-    } else {
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        toast.error("Failed to update your profile.", {
+          description: profileError.message,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["user", user.id] });
+
+      // Upload payment proof
+      const file = values.paymentProof[0];
+      const filePath = `${messId}/${user.id}/${Date.now()}-${file.name}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("payment_proofs")
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        toast.error("Failed to upload payment proof.", {
+          description:
+            "This may be due to missing storage permissions. Please try again later.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Calculate dates
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(startDate.getMonth() + selectedPlan.months);
+
+      // Create subscription with dynamic plan data
+      const { error: subscriptionError } = await supabase
+        .from("subscriptions")
+        .insert({
+          user_id: user.id,
+          mess_id: messId,
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          payment_screenshot_url: uploadData.path,
+          status: "pending_owner_confirmation",
+          plan_duration_months: selectedPlan.months,
+          plan_price: selectedPlan.price,
+        });
+
+      if (subscriptionError) {
+        console.error("Subscription error:", subscriptionError);
+        toast.error("Failed to create subscription.", {
+          description: subscriptionError.message,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       toast.success("Subscription request sent!", {
         description: "The mess owner will review your payment proof shortly.",
       });
+      queryClient.invalidateQueries({ queryKey: ["userSubscription"] });
       onSuccess();
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
-  if (isProfileLoading || isMessLoading) {
+  if (isProfileLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-full" />
@@ -228,9 +240,20 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     );
   }
 
+  if (!pricingPlans || pricingPlans.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No pricing plans available. Please contact the mess owner.
+      </div>
+    );
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-4 overflow-scroll h-[80vh] overflow-x-hidden px-2"
+      >
         <FormField
           control={form.control}
           name="fullName"
@@ -244,19 +267,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Address</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Your delivery address" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
         <FormField
           control={form.control}
           name="phoneNumber"
@@ -264,65 +275,129 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
             <FormItem>
               <FormLabel>Phone Number</FormLabel>
               <FormControl>
-                <Input placeholder="Your phone number" {...field} />
+                <Input type="tel" placeholder="Your phone number" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
-          name="planDuration"
+          name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Select Plan</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose subscription duration" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {availablePlans.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      No plans available
-                    </SelectItem>
-                  ) : (
-                    availablePlans.map((plan) => (
-                      <SelectItem
-                        key={plan.duration}
-                        value={plan.duration.toString()}
-                      >
-                        {plan.duration}{" "}
-                        {plan.duration === 1 ? "Month" : "Months"} - ₹
-                        {plan.price}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="paymentProof"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Payment Screenshot</FormLabel>
+              <FormLabel>Full Address</FormLabel>
               <FormControl>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => field.onChange(e.target.files)}
+                <Textarea
+                  placeholder="Your complete delivery address"
+                  className="resize-none"
+                  // rows={1}
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+
+        <FormField
+          control={form.control}
+          name="planDuration"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Select Plan</FormLabel>
+              <Select onValueChange={handlePlanChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose subscription duration" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {pricingPlans.map((plan) => (
+                    <SelectItem
+                      key={plan.months}
+                      value={plan.months.toString()}
+                    >
+                      <div className="flex items-center justify-between w-full gap-4">
+                        <span className="font-medium">
+                          {plan.months} {plan.months === 1 ? "Month" : "Months"}
+                        </span>
+                        <span className="flex items-center text-green-600 font-semibold">
+                          <IndianRupee className="w-3 h-3" />
+                          {plan.price.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                {selectedPlan && (
+                  <span className="text-sm font-medium text-primary">
+                    Total Amount: ₹{selectedPlan.price.toLocaleString("en-IN")}{" "}
+                    for {selectedPlan.months}{" "}
+                    {selectedPlan.months === 1 ? "month" : "months"}
+                    {selectedPlan.months > 1 && (
+                      <span className="text-muted-foreground ml-1">
+                        (₹
+                        {(selectedPlan.price / selectedPlan.months).toFixed(0)}
+                        /month)
+                      </span>
+                    )}
+                  </span>
+                )}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="paymentProof"
+          render={({ field: { value, onChange, ...fieldProps } }) => (
+            <FormItem>
+              <FormLabel>Payment Screenshot</FormLabel>
+              <FormControl>
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+                  onChange={(e) => onChange(e.target.files)}
+                  {...fieldProps}
+                  className="cursor-pointer"
+                />
+              </FormControl>
+              <FormDescription>
+                Upload payment proof (JPG, PNG, WEBP, or PDF, max 5MB)
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {selectedPlan && (
+          <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+            <h4 className="font-semibold mb-2 text-sm">
+              Payment Instructions:
+            </h4>
+            <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+              <li>
+                Transfer ₹{selectedPlan.price.toLocaleString("en-IN")} to the
+                mess owner
+              </li>
+              <li>Take a screenshot of the payment confirmation</li>
+              <li>Upload the screenshot above</li>
+              <li>Submit the form and wait for approval</li>
+            </ol>
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isSubmitting || !selectedPlan}
+        >
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Submit for Verification
         </Button>

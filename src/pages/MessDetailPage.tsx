@@ -144,7 +144,17 @@ const MessDetailPage = () => {
   const isLoading = isMessLoading || isMenuLoading;
   const isOwner = user && mess && user.id === mess.owner_id;
   const isStudent = profile?.role === "student";
-  console.log(isStudent);
+
+  // Get pricing plans from the dynamic pricing_plans field
+  const pricingPlans = React.useMemo(() => {
+    if (!mess?.pricing_plans || !Array.isArray(mess.pricing_plans)) {
+      return [];
+    }
+    // Sort plans by duration for better display
+    return [...mess.pricing_plans].sort((a, b) => a.months - b.months);
+  }, [mess?.pricing_plans]);
+
+  const hasPricingPlans = pricingPlans.length > 0;
 
   if (isLoading) {
     return (
@@ -306,45 +316,39 @@ const MessDetailPage = () => {
               <CardTitle className="text-lg">Subscription Plans</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="space-y-2">
-                {mess.price_1_month && (
-                  <div className="flex justify-between items-center p-2 rounded border">
-                    <span className="font-medium">1 Month</span>
-                    <span className="text-green-600 font-semibold flex items-center">
-                      <IndianRupee className="w-4 h-4" />
-                      {mess.price_1_month}
-                    </span>
-                  </div>
-                )}
-                {mess.price_2_months && (
-                  <div className="flex justify-between items-center p-2 rounded border">
-                    <span className="font-medium">2 Months</span>
-                    <span className="text-green-600 font-semibold flex items-center">
-                      <IndianRupee className="w-4 h-4" />
-                      {mess.price_2_months}
-                    </span>
-                  </div>
-                )}
-                {mess.price_3_months && (
-                  <div className="flex justify-between items-center p-2 rounded border">
-                    <span className="font-medium">3 Months</span>
-                    <span className="text-green-600 font-semibold flex items-center">
-                      <IndianRupee className="w-4 h-4" />
-                      {mess.price_3_months}
-                    </span>
-                  </div>
-                )}
-                {mess.price_6_months && (
-                  <div className="flex justify-between items-center p-2 rounded border">
-                    <span className="font-medium">6 Months</span>
-                    <span className="text-green-600 font-semibold flex items-center">
-                      <IndianRupee className="w-4 h-4" />
-                      {mess.price_6_months}
-                    </span>
-                  </div>
-                )}
-              </div>
+              {hasPricingPlans ? (
+                <div className="space-y-2">
+                  {pricingPlans.map((plan, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center p-3 rounded-lg border bg-gradient-to-r from-primary/5 to-transparent hover:from-primary/10 transition-colors"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-foreground">
+                          {plan.months} {plan.months === 1 ? "Month" : "Months"}
+                        </span>
+                        {plan.months >= 3 && (
+                          <span className="text-xs text-muted-foreground">
+                            ₹{(plan.price / plan.months).toFixed(0)}/month
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-green-600 font-bold text-lg flex items-center">
+                        <IndianRupee className="w-4 h-4" />
+                        {plan.price.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  No pricing plans available yet.
+                  {isOwner && " Please add pricing plans in your dashboard."}
+                </p>
+              )}
+
               <Separator className="my-3" />
+
               {!user && (
                 <Button
                   asChild
@@ -363,7 +367,7 @@ const MessDetailPage = () => {
                   Only students can subscribe
                 </Button>
               )}
-              {user && isStudent && !userSubscription && (
+              {user && isStudent && !userSubscription && hasPricingPlans && (
                 <Dialog
                   open={isSubscriptionDialogOpen}
                   onOpenChange={setIsSubscriptionDialogOpen}
@@ -384,11 +388,17 @@ const MessDetailPage = () => {
                     {id && (
                       <SubscriptionForm
                         messId={id}
+                        pricingPlans={pricingPlans}
                         onSuccess={() => setIsSubscriptionDialogOpen(false)}
                       />
                     )}
                   </DialogContent>
                 </Dialog>
+              )}
+              {user && isStudent && !userSubscription && !hasPricingPlans && (
+                <Button className="w-full text-lg py-6" disabled>
+                  No plans available
+                </Button>
               )}
               {user && isStudent && userSubscription && (
                 <Button

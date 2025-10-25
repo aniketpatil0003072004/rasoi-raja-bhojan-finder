@@ -25,6 +25,8 @@ const OwnerDashboardPage = () => {
   const [closureReason, setClosureReason] = useState("");
   const [showClosureForm, setShowClosureForm] = useState(false);
 
+  console.log(messId);
+
   useEffect(() => {
     const fetchMessData = async () => {
       const { data: mess_data, error: messError } = await supabase
@@ -32,6 +34,8 @@ const OwnerDashboardPage = () => {
         .select("id, is_closed, closed_from, closed_until, closure_reason")
         .eq("owner_id", user.id)
         .single();
+
+      console.log(mess_data);
 
       if (mess_data) {
         setMessId(mess_data.id);

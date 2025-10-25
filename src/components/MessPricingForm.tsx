@@ -10,6 +10,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,14 +21,27 @@ import { Mess } from "@/types";
 import { Plus, Trash2 } from "lucide-react";
 
 const pricingPlanSchema = z.object({
-  months: z.number().min(1, "Months must be at least 1"),
+  months: z
+    .number()
+    .min(1, "Duration must be at least 1 month")
+    .max(24, "Duration cannot exceed 24 months"),
   price: z.number().min(1, "Price must be at least ₹1"),
 });
 
 const pricingFormSchema = z.object({
   plans: z
     .array(pricingPlanSchema)
-    .min(1, "At least one pricing plan is required"),
+    .min(1, "At least one pricing plan is required")
+    .refine(
+      (plans) => {
+        const months = plans.map((p) => p.months);
+        return months.length === new Set(months).size;
+      },
+      {
+        message:
+          "Duplicate durations are not allowed. Each plan must have a unique duration.",
+      }
+    ),
 });
 
 type PricingFormValues = z.infer<typeof pricingFormSchema>;
@@ -44,18 +58,17 @@ const MessPricingForm: React.FC<MessPricingFormProps> = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Convert existing mess pricing to plans array
+  // Get initial plans from the pricing_plans JSON column
   const getInitialPlans = () => {
-    const plans = [];
-    if (mess.price_1_month)
-      plans.push({ months: 1, price: mess.price_1_month });
-    if (mess.price_2_months)
-      plans.push({ months: 2, price: mess.price_2_months });
-    if (mess.price_3_months)
-      plans.push({ months: 3, price: mess.price_3_months });
-    if (mess.price_6_months)
-      plans.push({ months: 6, price: mess.price_6_months });
-    return plans.length > 0 ? plans : [{ months: 1, price: 0 }];
+    if (
+      mess.pricing_plans &&
+      Array.isArray(mess.pricing_plans) &&
+      mess.pricing_plans.length > 0
+    ) {
+      return mess.pricing_plans;
+    }
+    // Default to one plan if none exist
+    return [{ months: 1, price: 0 }];
   };
 
   const form = useForm<PricingFormValues>({
@@ -72,27 +85,15 @@ const MessPricingForm: React.FC<MessPricingFormProps> = ({
 
   const updatePricingMutation = useMutation({
     mutationFn: async (formData: PricingFormValues) => {
-      // Convert plans array back to individual columns
-      const pricingData: any = {
-        price_1_month: null,
-        price_2_months: null,
-        price_3_months: null,
-        price_6_months: null,
-        pricing_plans: formData.plans, // Store all plans in a JSON column
-      };
-
-      // Map common durations to their columns for backward compatibility
-      formData.plans.forEach((plan) => {
-        if (plan.months === 1) pricingData.price_1_month = plan.price;
-        else if (plan.months === 2) pricingData.price_2_months = plan.price;
-        else if (plan.months === 3) pricingData.price_3_months = plan.price;
-        else if (plan.months === 6) pricingData.price_6_months = plan.price;
-      });
-
+      // Store all plans in the pricing_plans JSON column
       const { error } = await supabase
         .from("messes")
-        .update(pricingData)
+        .update({
+          pricing_plans: formData.plans,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", mess.id);
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -101,6 +102,7 @@ const MessPricingForm: React.FC<MessPricingFormProps> = ({
         description: "Pricing plans updated successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["ownerMesses"] });
+      queryClient.invalidateQueries({ queryKey: ["mess", mess.id] });
       onSuccess?.();
     },
     onError: (error: any) => {
@@ -119,7 +121,13 @@ const MessPricingForm: React.FC<MessPricingFormProps> = ({
   }
 
   const addPlan = () => {
-    append({ months: 1, price: 0 });
+    // Find the next available month duration
+    const existingMonths = form.getValues("plans").map((p) => p.months);
+    let nextMonth = 1;
+    while (existingMonths.includes(nextMonth)) {
+      nextMonth++;
+    }
+    append({ months: nextMonth, price: 0 });
   };
 
   return (
@@ -134,7 +142,7 @@ const MessPricingForm: React.FC<MessPricingFormProps> = ({
               {fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="flex gap-4 items-start p-4 border rounded-lg"
+                  className="flex gap-4 items-start p-4 border rounded-lg bg-gray-50"
                 >
                   <div className="flex-1 grid grid-cols-2 gap-4">
                     <FormField
@@ -147,13 +155,17 @@ const MessPricingForm: React.FC<MessPricingFormProps> = ({
                             <Input
                               type="number"
                               min="1"
-                              placeholder="e.g. 1, 3, 6"
+                              max="24"
+                              placeholder="e.g. 1, 2, 3, 6, 12"
                               {...field}
                               onChange={(e) =>
                                 field.onChange(Number(e.target.value) || 1)
                               }
                             />
                           </FormControl>
+                          <FormDescription className="text-xs">
+                            Enter any number from 1 to 24 months
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -175,6 +187,9 @@ const MessPricingForm: React.FC<MessPricingFormProps> = ({
                               }
                             />
                           </FormControl>
+                          <FormDescription className="text-xs">
+                            Total price for the duration
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -194,6 +209,12 @@ const MessPricingForm: React.FC<MessPricingFormProps> = ({
                 </div>
               ))}
             </div>
+
+            {form.formState.errors.plans?.root && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.plans.root.message}
+              </p>
+            )}
 
             <Button
               type="button"
