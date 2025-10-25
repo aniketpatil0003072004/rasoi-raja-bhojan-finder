@@ -34,7 +34,6 @@ const SubscriptionManagement = () => {
   const [approvingSub, setApprovingSub] =
     React.useState<SubscriptionWithDetails | null>(null);
 
-  console.log(subscriptions[0]);
   // payment_screenshot_url: "a12fee1c-7e50-4522-b492-a45de430da25/94c7c5a9-4f3e-4277-869f-e8f846b3bd01/1761388199010-Screenshot 2024-04-28 130914.png"
 
   const handleViewProof = async (subscription: SubscriptionWithDetails) => {
