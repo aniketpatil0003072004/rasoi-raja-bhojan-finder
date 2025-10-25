@@ -115,9 +115,8 @@ const ApproveSubscriptionDialog: React.FC<ApproveSubscriptionDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Approve Subscription</DialogTitle>
           <DialogDescription>
-            Upload proof of payment receipt for{" "}
-            {subscription?.profiles?.full_name}. This will activate their
-            subscription.
+            Upload proof of payment receipt for {subscription?.user?.full_name}.
+            This will activate their subscription.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
