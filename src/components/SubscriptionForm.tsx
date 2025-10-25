@@ -61,7 +61,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
   const fetchProfile = async () => {
     if (!user) return null;
     const { data, error } = await supabase
-      .from("profiles")
+      .from("user")
       .select("*")
       .eq("id", user.id)
       .single();
@@ -86,7 +86,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
   };
 
   const { data: profile, isLoading: isProfileLoading } = useQuery({
-    queryKey: ["profile", user?.id],
+    queryKey: ["user", user?.id],
     queryFn: fetchProfile,
     enabled: !!user,
   });
@@ -139,7 +139,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     setIsSubmitting(true);
 
     const { error: profileError } = await supabase
-      .from("profiles")
+      .from("user")
       .update({
         full_name: values.fullName,
         address: values.address,
@@ -155,7 +155,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
       setIsSubmitting(false);
       return;
     }
-    queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+    queryClient.invalidateQueries({ queryKey: ["user", user.id] });
 
     const file = values.paymentProof[0];
     const filePath = `${messId}/${user.id}/${Date.now()}-${file.name}`;

@@ -12,9 +12,7 @@ const fetchSubscriptionsByStatus = async (
   if (messIds.length === 0) return [];
   const { data, error } = await supabase
     .from("subscriptions")
-    .select(
-      "*, profiles(full_name, address, phone_number), messes(name, address)"
-    )
+    .select("*, user(full_name, address, phone_number), messes(name, address)")
     .in("mess_id", messIds)
     .eq("status", status);
   if (error) throw new Error(error.message);

@@ -1,22 +1,22 @@
 import { Tables } from "@/integrations/supabase/types";
 
-export type Mess = Tables<'messes'>;
-export type Menu = Tables<'menus'>;
-export type Subscription = Tables<'subscriptions'>;
-export type Profile = Tables<'profiles'>;
-export type Delivery = Tables<'deliveries'>;
-export type MessDeliveryPersonnel = Tables<'mess_delivery_personnel'>;
-export type DeliveryNotification = Tables<'delivery_notifications'>;
-export type MealSkip = Tables<'meal_skips'>;
+export type Mess = Tables<"messes">;
+export type Menu = Tables<"menus">;
+export type Subscription = Tables<"subscriptions">;
+export type Profile = Tables<"profiles">;
+export type Delivery = Tables<"deliveries">;
+export type MessDeliveryPersonnel = Tables<"mess_delivery_personnel">;
+export type DeliveryNotification = Tables<"delivery_notifications">;
+export type MealSkip = Tables<"meal_skips">;
 
 // New type for subscriptions with joined data
 export type SubscriptionWithDetails = Subscription & {
-  profiles: { 
+  user: {
     full_name?: string | null;
     address?: string | null;
     phone_number?: string | null;
   } | null;
-  messes: { 
+  messes: {
     name?: string | null;
     address?: string | null;
   } | null;
@@ -25,7 +25,7 @@ export type SubscriptionWithDetails = Subscription & {
 // New type for deliveries with joined data
 export type DeliveryWithDetails = Delivery & {
   subscriptions: {
-    profiles: {
+    user: {
       full_name?: string | null;
       address?: string | null;
     } | null;
@@ -39,31 +39,31 @@ export type DeliveryWithDetails = Delivery & {
 
 // Food tracking status labels
 export const DELIVERY_STATUS_LABELS = {
-  pending_assignment: 'Pending Assignment',
-  assigned: 'Assigned to Delivery Person',
-  food_preparing: 'Food Being Prepared',
-  food_ready: 'Food Ready for Pickup',
-  picked_up: 'Picked Up',
-  out_for_delivery: 'Out for Delivery',
-  delivered: 'Delivered',
-  failed: 'Delivery Failed'
+  pending_assignment: "Pending Assignment",
+  assigned: "Assigned to Delivery Person",
+  food_preparing: "Food Being Prepared",
+  food_ready: "Food Ready for Pickup",
+  picked_up: "Picked Up",
+  out_for_delivery: "Out for Delivery",
+  delivered: "Delivered",
+  failed: "Delivery Failed",
 } as const;
 
 // Status colors for UI
 export const DELIVERY_STATUS_COLORS = {
-  pending_assignment: 'bg-gray-100 text-gray-800',
-  assigned: 'bg-blue-100 text-blue-800',
-  food_preparing: 'bg-yellow-100 text-yellow-800',
-  food_ready: 'bg-orange-100 text-orange-800',
-  picked_up: 'bg-purple-100 text-purple-800',
-  out_for_delivery: 'bg-indigo-100 text-indigo-800',
-  delivered: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-800'
+  pending_assignment: "bg-gray-100 text-gray-800",
+  assigned: "bg-blue-100 text-blue-800",
+  food_preparing: "bg-yellow-100 text-yellow-800",
+  food_ready: "bg-orange-100 text-orange-800",
+  picked_up: "bg-purple-100 text-purple-800",
+  out_for_delivery: "bg-indigo-100 text-indigo-800",
+  delivered: "bg-green-100 text-green-800",
+  failed: "bg-red-100 text-red-800",
 } as const;
 
 // Meal type labels
 export const MEAL_TYPE_LABELS = {
-  breakfast: 'Breakfast',
-  lunch: 'Lunch',
-  dinner: 'Dinner'
+  breakfast: "Breakfast",
+  lunch: "Lunch",
+  dinner: "Dinner",
 } as const;
