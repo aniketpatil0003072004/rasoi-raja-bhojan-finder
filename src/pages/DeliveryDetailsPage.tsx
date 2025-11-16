@@ -42,7 +42,7 @@ const fetchDeliveryDetails = async (deliveryId: string) => {
 
 const DeliveryDetailsPage = () => {
   const { deliveryId } = useParams<{ deliveryId: string }>();
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
 
   const {

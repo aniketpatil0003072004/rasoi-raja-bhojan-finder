@@ -39,7 +39,7 @@ const fetchStudentDeliveries = async (userId: string) => {
 };
 
 const StudentDeliveryTrackingPage = () => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
   const {
     data: deliveries,

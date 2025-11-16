@@ -33,7 +33,7 @@ const fetchPublicDeliveries = async (): Promise<DeliveryWithDetails[]> => {
 };
 
 export const usePublicDeliveries = () => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
   return useQuery({
     queryKey: ["publicDeliveries"],

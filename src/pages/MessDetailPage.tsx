@@ -32,7 +32,7 @@ import SubscriptionForm from "@/components/SubscriptionForm";
 
 const MessDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = userData ? JSON.parse(userData) : null;
   const [isMenuDialogOpen, setIsMenuDialogOpen] = React.useState(false);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] =

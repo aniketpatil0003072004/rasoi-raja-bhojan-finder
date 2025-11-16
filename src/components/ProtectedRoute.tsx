@@ -12,7 +12,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const [authLoading, setAuthLoading] = useState(false);
-  const userName = localStorage.getItem("username");
+  const userName = sessionStorage.getItem("username");
 
   const location = useLocation();
 

@@ -20,7 +20,7 @@ interface PublicDeliveriesProps {
 }
 
 const PublicDeliveries = ({ deliveries }: PublicDeliveriesProps) => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
   const queryClient = useQueryClient();
   const [acceptingId, setAcceptingId] = React.useState<string | null>(null);

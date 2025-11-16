@@ -33,7 +33,7 @@ const fetchAssignedDeliveries = async (userId: string) => {
 };
 
 export const useAssignedDeliveries = () => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
 
   return useQuery({

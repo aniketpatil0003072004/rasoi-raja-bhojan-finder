@@ -17,7 +17,7 @@ import {
 import { format } from "date-fns";
 
 export const SubscriptionExpirationDialog = () => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = userData ? JSON.parse(userData) : null; // Fixed: Check if userData exists before parsing
   const { data: expiringSubscriptions } = useSubscriptionExpiration(7);
   const [currentNotification, setCurrentNotification] =

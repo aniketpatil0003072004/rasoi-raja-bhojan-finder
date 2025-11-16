@@ -25,7 +25,7 @@ import { Profile } from "@/types";
 import NotificationBell from "./NotificationBell";
 
 const Header = () => {
-  const user = localStorage.getItem("user");
+  const user = sessionStorage.getItem("user");
   let userData;
 
   if (user) {
@@ -72,8 +72,8 @@ const Header = () => {
   // }, [user, authLoading]);
 
   const handleSignOut = async () => {
-    localStorage.setItem("username", "");
-    localStorage.setItem("user", "");
+    sessionStorage.setItem("username", "");
+    sessionStorage.setItem("user", "");
     navigate("/");
   };
 

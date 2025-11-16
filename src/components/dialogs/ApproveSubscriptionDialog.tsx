@@ -45,7 +45,7 @@ const ApproveSubscriptionDialog: React.FC<ApproveSubscriptionDialogProps> = ({
   isOpen,
   onOpenChange,
 }) => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
   const queryClient = useQueryClient();
   const form = useForm<ApprovalFormValues>({

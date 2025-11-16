@@ -78,7 +78,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
   pricingPlans,
   onSuccess,
 }) => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = userData ? JSON.parse(userData) : null;
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = React.useState(false);

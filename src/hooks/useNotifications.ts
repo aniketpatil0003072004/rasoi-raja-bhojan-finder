@@ -32,7 +32,7 @@ const markNotificationAsRead = async (notificationId: string) => {
 };
 
 export const useNotifications = () => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
   const { toast } = useToast();
   const queryClient = useQueryClient();

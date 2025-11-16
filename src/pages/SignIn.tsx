@@ -47,8 +47,8 @@ const SignInPage = () => {
 
       sonnerToast.success(`Login successful! Welcome ${user?.full_name}!`);
 
-      localStorage.setItem("username", user.user_name);
-      localStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("username", user.user_name);
+      sessionStorage.setItem("user", JSON.stringify(user));
 
       if (user.role === "mess_owner") {
         navigate("/dashboard");

@@ -1,8 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-// import { CloudCog } from "lucide-react";
-//
+
 export const signUpSchema = z.object({
   userName: z
     .string()

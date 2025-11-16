@@ -14,7 +14,7 @@ const fetchOwnerMesses = async (ownerId: string): Promise<Mess[]> => {
 };
 
 export const useOwnerMesses = () => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
 
   const {

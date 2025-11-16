@@ -68,7 +68,7 @@ const messFormSchema = z.object({
 type MessFormValues = z.infer<typeof messFormSchema>;
 
 const AddMessForm = () => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
   const navigate = useNavigate();
   const { toast } = useToast();

@@ -20,7 +20,7 @@ const fetchSubscriptionsByStatus = async (
 };
 
 export const useOwnerSubscriptions = (status: Subscription["status"]) => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
   const {
     messIds,

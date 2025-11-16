@@ -17,7 +17,7 @@ const MySubscriptionsPage = () => {
     closureReason: string | null;
   } | null>(null);
 
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   let user;
   if (userData) {
     user = JSON.parse(userData);

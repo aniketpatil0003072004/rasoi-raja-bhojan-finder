@@ -22,7 +22,7 @@ const fetchTodaysDeliveries = async (
 };
 
 export const useTodaysDeliveries = () => {
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
   const { messIds, isLoading: isMessesLoading } = useOwnerMesses();
 

@@ -14,7 +14,7 @@ const Index = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = userData ? JSON.parse(userData) : null;
 
   const fetchFeaturedMesses = async (): Promise<Mess[]> => {

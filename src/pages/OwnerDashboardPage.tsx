@@ -14,7 +14,7 @@ const OwnerDashboardPage = () => {
   const [todayBreakfast, setTodayBreakfast] = useState("");
   const [todayLunch, setTodayLunch] = useState("");
   const [todayDinner, setTodayDinner] = useState("");
-  const userData = localStorage.getItem("user");
+  const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
   const [messId, setMessId] = useState("");
 
