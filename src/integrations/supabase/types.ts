@@ -274,6 +274,7 @@ export type Database = {
           rating: number | null;
           review_count: number | null;
           updated_at: string | null;
+          weekly_plan_price: number | null;
         };
         Insert: {
           address?: string | null;
@@ -297,6 +298,7 @@ export type Database = {
           rating?: number | null;
           review_count?: number | null;
           updated_at?: string | null;
+          weekly_plan_price?: number | null;
         };
         Update: {
           address?: string | null;
@@ -320,6 +322,7 @@ export type Database = {
           rating?: number | null;
           review_count?: number | null;
           updated_at?: string | null;
+          weekly_plan_price?: number | null;
         };
         Relationships: [
           {
