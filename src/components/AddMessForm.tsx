@@ -35,6 +35,7 @@ const messFormSchema = z.object({
     .string()
     .min(10, "Description must be at least 10 characters."),
   address: z.string().min(5, "Address is required."),
+  weekly_plan_price: z.coerce.number(),
   pricing_plans: z.array(
     z.object({
       month: z.coerce
@@ -88,6 +89,7 @@ const AddMessForm = () => {
     defaultValues: {
       name: "",
       description: "",
+      weekly_plan_price: 0,
       address: "",
       pricing_plans: [
         {
@@ -134,6 +136,7 @@ const AddMessForm = () => {
         name: values.name,
         description: values.description,
         address: values.address,
+        weekly_plan_price: values.weekly_plan_price,
         pricing_plans: values.pricing_plans,
         contact: values.contact,
         operating_hours: values.operating_hours,
@@ -219,6 +222,26 @@ const AddMessForm = () => {
             </FormItem>
           )}
         />
+        <div className="space-y-2">
+          <FormLabel className="text-sm font-medium">
+            Weekly Plan Price
+          </FormLabel>
+          <div className="flex items-center gap-4">
+            <FormField
+              control={form.control}
+              name="weekly_plan_price"
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>Price (INR)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="Enter price" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
         <div className="space-y-4">
           <FormLabel className="text-lg font-medium">Pricing Plans</FormLabel>
