@@ -254,7 +254,10 @@ export type Database = {
       messes: {
         Row: {
           address: string | null;
-          cancellation_deadline_time: string | null;
+          breakfast: string[] | null;
+          cancellation_deadline_time_breakfast: string | null;
+          cancellation_deadline_time_dinner: string | null;
+          cancellation_deadline_time_lunch: string | null;
           closed_from: string | null;
           closed_until: string | null;
           closure_reason: string | null;
@@ -262,10 +265,12 @@ export type Database = {
           created_at: string;
           cuisine: string[] | null;
           description: string | null;
+          dinner: string[] | null;
           id: string;
           image_url: string | null;
           is_closed: boolean | null;
           is_verified: boolean | null;
+          lunch: string[] | null;
           name: string;
           offers_delivery: boolean | null;
           operating_hours: string | null;
@@ -278,7 +283,10 @@ export type Database = {
         };
         Insert: {
           address?: string | null;
-          cancellation_deadline_time?: string | null;
+          breakfast?: string[] | null;
+          cancellation_deadline_time_breakfast?: string | null;
+          cancellation_deadline_time_dinner?: string | null;
+          cancellation_deadline_time_lunch?: string | null;
           closed_from?: string | null;
           closed_until?: string | null;
           closure_reason?: string | null;
@@ -286,10 +294,12 @@ export type Database = {
           created_at?: string;
           cuisine?: string[] | null;
           description?: string | null;
+          dinner?: string[] | null;
           id?: string;
           image_url?: string | null;
           is_closed?: boolean | null;
           is_verified?: boolean | null;
+          lunch?: string[] | null;
           name: string;
           offers_delivery?: boolean | null;
           operating_hours?: string | null;
@@ -302,7 +312,10 @@ export type Database = {
         };
         Update: {
           address?: string | null;
-          cancellation_deadline_time?: string | null;
+          breakfast?: string[] | null;
+          cancellation_deadline_time_breakfast?: string | null;
+          cancellation_deadline_time_dinner?: string | null;
+          cancellation_deadline_time_lunch?: string | null;
           closed_from?: string | null;
           closed_until?: string | null;
           closure_reason?: string | null;
@@ -310,10 +323,12 @@ export type Database = {
           created_at?: string;
           cuisine?: string[] | null;
           description?: string | null;
+          dinner?: string[] | null;
           id?: string;
           image_url?: string | null;
           is_closed?: boolean | null;
           is_verified?: boolean | null;
+          lunch?: string[] | null;
           name?: string;
           offers_delivery?: boolean | null;
           operating_hours?: string | null;
