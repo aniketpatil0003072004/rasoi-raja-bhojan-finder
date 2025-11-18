@@ -223,7 +223,7 @@ const AddMessForm = () => {
           )}
         />
         <div className="space-y-2">
-          <FormLabel className="text-sm font-medium">
+          <FormLabel className="text-lg font-medium">
             Weekly Plan Price
           </FormLabel>
           <div className="flex items-center gap-4">
@@ -234,7 +234,12 @@ const AddMessForm = () => {
                 <FormItem className="w-full">
                   <FormLabel>Price (INR)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="Enter price" {...field} />
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Enter price"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
