@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)";
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       deliveries: {
@@ -164,7 +189,6 @@ export type Database = {
       menus: {
         Row: {
           breakfast: string | null;
-          day: Database["public"]["Enums"]["day_of_week"];
           dinner: string | null;
           id: string;
           lunch: string | null;
@@ -172,7 +196,6 @@ export type Database = {
         };
         Insert: {
           breakfast?: string | null;
-          day: Database["public"]["Enums"]["day_of_week"];
           dinner?: string | null;
           id?: string;
           lunch?: string | null;
@@ -180,7 +203,6 @@ export type Database = {
         };
         Update: {
           breakfast?: string | null;
-          day?: Database["public"]["Enums"]["day_of_week"];
           dinner?: string | null;
           id?: string;
           lunch?: string | null;
@@ -233,78 +255,81 @@ export type Database = {
         Row: {
           address: string | null;
           cancellation_deadline_time: string | null;
+          closed_from: string | null;
+          closed_until: string | null;
+          closure_reason: string | null;
           contact: string | null;
           created_at: string;
           cuisine: string[] | null;
           description: string | null;
           id: string;
           image_url: string | null;
+          is_closed: boolean | null;
           is_verified: boolean | null;
-          monthly_price: number | null;
           name: string;
           offers_delivery: boolean | null;
           operating_hours: string | null;
           owner_id: string | null;
-          price_1_month: number | null;
-          price_2_months: number | null;
-          price_3_months: number | null;
-          price_6_months: number | null;
+          pricing_plans: Json[] | null;
           rating: number | null;
           review_count: number | null;
-          pricing_plans:
-            | [
-                {
-                  months: number;
-                  price: number;
-                }
-              ]
-            | [];
+          updated_at: string | null;
         };
         Insert: {
           address?: string | null;
           cancellation_deadline_time?: string | null;
+          closed_from?: string | null;
+          closed_until?: string | null;
+          closure_reason?: string | null;
           contact?: string | null;
           created_at?: string;
           cuisine?: string[] | null;
           description?: string | null;
           id?: string;
           image_url?: string | null;
+          is_closed?: boolean | null;
           is_verified?: boolean | null;
-          monthly_price?: number | null;
           name: string;
           offers_delivery?: boolean | null;
           operating_hours?: string | null;
           owner_id?: string | null;
-          price_1_month?: number | null;
-          price_2_months?: number | null;
-          price_3_months?: number | null;
-          price_6_months?: number | null;
+          pricing_plans?: Json[] | null;
           rating?: number | null;
           review_count?: number | null;
+          updated_at?: string | null;
         };
         Update: {
           address?: string | null;
           cancellation_deadline_time?: string | null;
+          closed_from?: string | null;
+          closed_until?: string | null;
+          closure_reason?: string | null;
           contact?: string | null;
           created_at?: string;
           cuisine?: string[] | null;
           description?: string | null;
           id?: string;
           image_url?: string | null;
+          is_closed?: boolean | null;
           is_verified?: boolean | null;
-          monthly_price?: number | null;
           name?: string;
           offers_delivery?: boolean | null;
           operating_hours?: string | null;
           owner_id?: string | null;
-          price_1_month?: number | null;
-          price_2_months?: number | null;
-          price_3_months?: number | null;
-          price_6_months?: number | null;
+          pricing_plans?: Json[] | null;
           rating?: number | null;
           review_count?: number | null;
+          updated_at?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "messes_owner_id_fkey1";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       profiles: {
         Row: {
@@ -405,10 +430,81 @@ export type Database = {
             foreignKeyName: "subscriptions_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "user";
             referencedColumns: ["id"];
           }
         ];
+      };
+      today_meals: {
+        Row: {
+          breakfast: string | null;
+          created_at: string;
+          dinner: string | null;
+          id: number;
+          lunch: string | null;
+          mess_id: string | null;
+        };
+        Insert: {
+          breakfast?: string | null;
+          created_at?: string;
+          dinner?: string | null;
+          id?: number;
+          lunch?: string | null;
+          mess_id?: string | null;
+        };
+        Update: {
+          breakfast?: string | null;
+          created_at?: string;
+          dinner?: string | null;
+          id?: number;
+          lunch?: string | null;
+          mess_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "today_meals_mess_id_fkey";
+            columns: ["mess_id"];
+            isOneToOne: true;
+            referencedRelation: "messes";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      user: {
+        Row: {
+          address: string | null;
+          created_at: string;
+          email: string | null;
+          full_name: string | null;
+          id: string;
+          password: string | null;
+          phone_number: string | null;
+          role: string | null;
+          user_name: string | null;
+        };
+        Insert: {
+          address?: string | null;
+          created_at?: string;
+          email?: string | null;
+          full_name?: string | null;
+          id?: string;
+          password?: string | null;
+          phone_number?: string | null;
+          role?: string | null;
+          user_name?: string | null;
+        };
+        Update: {
+          address?: string | null;
+          created_at?: string;
+          email?: string | null;
+          full_name?: string | null;
+          id?: string;
+          password?: string | null;
+          phone_number?: string | null;
+          role?: string | null;
+          user_name?: string | null;
+        };
+        Relationships: [];
       };
       user_tokens: {
         Row: {
@@ -639,6 +735,9 @@ export type CompositeTypes<
   : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["student", "mess_owner", "delivery_personnel"],
