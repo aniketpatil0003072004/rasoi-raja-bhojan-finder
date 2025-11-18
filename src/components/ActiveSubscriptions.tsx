@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Card,
   CardContent,
@@ -17,65 +16,162 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Info, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOwnerSubscriptions } from "@/hooks/useOwnerSubscriptions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 const ActiveSubscriptions = () => {
   const { subscriptions, isLoading, error } = useOwnerSubscriptions("active");
+  const [subsIds, setSubsIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (subscriptions) {
+      const ids = subscriptions.map((sub) => sub.id);
+      setSubsIds(ids);
+    }
+  }, [subscriptions]);
+
+  const getCancelMealData = async () => {
+    const { data, error } = await supabase
+      .from("meal_skips")
+      .select("*")
+      .in("subscription_id", subsIds);
+
+    if (error) throw new Error(error.message);
+    return data || [];
+  };
+
+  const {
+    data: cancelMealData,
+    error: cancleMealError,
+    isLoading: cancelMealLoading,
+  } = useQuery({
+    queryKey: ["cancel_meals"],
+    queryFn: () => getCancelMealData(),
+  });
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Active Subscribers</CardTitle>
+        <CardTitle>Meal Management</CardTitle>
         <CardDescription>
-          A list of all your current active subscribers.
+          Track cancelled meals & today’s delivery list.
         </CardDescription>
       </CardHeader>
+
       <CardContent>
-        {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-          </div>
-        ) : error ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error.message}</AlertDescription>
-          </Alert>
-        ) : !subscriptions || subscriptions.length === 0 ? (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>No Active Subscribers</AlertTitle>
-            <AlertDescription>
-              You do not have any active subscribers at this moment.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Mess</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Subscribed Until</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {subscriptions.map((sub) => (
-                <TableRow key={sub.id}>
-                  <TableCell>{sub.user?.full_name || "N/A"}</TableCell>
-                  <TableCell>{sub.messes?.name || "N/A"}</TableCell>
-                  <TableCell>{sub.user?.phone_number || "N/A"}</TableCell>
-                  <TableCell>{sub.user?.address || "N/A"}</TableCell>
-                  <TableCell>
-                    {new Date(sub.end_date).toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+        <Tabs defaultValue="cancelled">
+          <TabsList className="w-full flex">
+            <TabsTrigger className="flex-1" value="cancelled">
+              Cancelled Meals
+            </TabsTrigger>
+            <TabsTrigger className="flex-1" value="delivery">
+              Delivery List
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="cancelled">
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ) : error ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error.message}</AlertDescription>
+              </Alert>
+            ) : !cancelMealData || cancelMealData.length === 0 ? (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>No Cancelled Meals</AlertTitle>
+                <AlertDescription>
+                  None of the students cancelled their meals today.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Breakfast</TableHead>
+                    <TableHead>Lunch</TableHead>
+                    <TableHead>Dinner</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cancelMealData.map((meal) => (
+                    <TableRow key={meal.id}>
+                      <TableCell>{meal.user.full_name}</TableCell>
+                      <TableCell>
+                        {meal.breakfast_cancelled
+                          ? "❌ Cancelled"
+                          : "✔️ Active"}
+                      </TableCell>
+                      <TableCell>
+                        {meal.lunch_cancelled ? "❌ Cancelled" : "✔️ Active"}
+                      </TableCell>
+                      <TableCell>
+                        {meal.dinner_cancelled ? "❌ Cancelled" : "✔️ Active"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+
+          <TabsContent value="delivery">
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ) : error ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error.message}</AlertDescription>
+              </Alert>
+            ) : !deliveryList || deliveryList.length === 0 ? (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>No Deliveries Today</AlertTitle>
+                <AlertDescription>
+                  There are no students scheduled for delivery today.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>Meals Today</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {deliveryList.map((d) => (
+                    <TableRow key={d.id}>
+                      <TableCell>{d.user?.full_name}</TableCell>
+                      <TableCell>{d.user?.phone_number}</TableCell>
+                      <TableCell>{d.user?.address}</TableCell>
+                      <TableCell className="font-medium">
+                        {d.breakfast ? "🍳 Breakfast " : ""}
+                        {d.lunch ? "🍛 Lunch " : ""}
+                        {d.dinner ? "🍽️ Dinner " : ""}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

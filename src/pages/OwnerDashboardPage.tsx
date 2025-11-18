@@ -227,7 +227,7 @@ const OwnerDashboardPage = () => {
                     onChange={(e) => setClosureReason(e.target.value)}
                     placeholder="E.g., Festival holiday, Maintenance, etc."
                     className="border border-gray-300 rounded-md w-full px-3 py-2"
-                    rows="2"
+                    rows={2}
                   />
                 </div>
                 <div className="flex gap-2">
@@ -318,17 +318,19 @@ const OwnerDashboardPage = () => {
 
       <Tabs defaultValue="active" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="mess">Mess Management</TabsTrigger>
+          <TabsTrigger value="active" className="font-bold">
+            Meal Cancellation / Meal Delivery
+          </TabsTrigger>
+          {/* <TabsTrigger value="mess">Mess Management</TabsTrigger>
           <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-          <TabsTrigger value="meal-skips">Meal Skips</TabsTrigger>
+          <TabsTrigger value="meal-skips">Meal Skips</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="active" className="mt-6">
           <ActiveSubscriptions />
         </TabsContent>
 
-        <TabsContent value="mess" className="mt-6">
+        {/* <TabsContent value="mess" className="mt-6">
           <MessManagement />
         </TabsContent>
 
@@ -345,7 +347,7 @@ const OwnerDashboardPage = () => {
 
         <TabsContent value="delivery" className="mt-6">
           <DeliveryManagement />
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
     </div>
   );
