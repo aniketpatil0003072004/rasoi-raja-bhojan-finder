@@ -91,6 +91,15 @@ const messFormSchema = z.object({
         message: ".jpg, .jpeg, .png and .webp files are accepted.",
       }
     ),
+  cancellation_deadline_time_breakfast: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, "Enter time in HH:MM format"),
+  cancellation_deadline_time_dinner: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, "Enter time in HH:MM format"),
+  cancellation_deadline_time_lunch: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, "Enter time in HH:MM format"),
 });
 
 type MessFormValues = z.infer<typeof messFormSchema>;
@@ -122,6 +131,9 @@ const AddMessForm = () => {
       breakfast: "" as any,
       lunch: "" as any,
       dinner: "" as any,
+      cancellation_deadline_time_breakfast: "",
+      cancellation_deadline_time_dinner: "",
+      cancellation_deadline_time_lunch: "",
     },
   });
 
@@ -165,6 +177,15 @@ const AddMessForm = () => {
         cuisine: values.cuisine,
         image_url: imageUrl,
         owner_id: user.id,
+        breakfast: values.breakfast,
+        lunch: values.lunch,
+        dinner: values.dinner,
+        cancellation_deadline_time_breakfast:
+          values.cancellation_deadline_time_breakfast,
+        cancellation_deadline_time_dinner:
+          values.cancellation_deadline_time_lunch,
+        cancellation_deadline_time_lunch:
+          values.cancellation_deadline_time_dinner,
       };
 
       const { data, error } = await supabase
@@ -363,6 +384,57 @@ const AddMessForm = () => {
             </FormItem>
           )}
         />
+
+        <div className="space-y-6">
+          <FormLabel className="text-lg font-medium">
+            Cancellation Deadlines
+          </FormLabel>
+
+          {/* Breakfast */}
+          <FormField
+            control={form.control}
+            name="cancellation_deadline_time_breakfast"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Breakfast Cancellation Time</FormLabel>
+                <FormControl>
+                  <Input type="time" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Lunch */}
+          <FormField
+            control={form.control}
+            name="cancellation_deadline_time_lunch"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Lunch Cancellation Time</FormLabel>
+                <FormControl>
+                  <Input type="time" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Dinner */}
+          <FormField
+            control={form.control}
+            name="cancellation_deadline_time_dinner"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Dinner Cancellation Time</FormLabel>
+                <FormControl>
+                  <Input type="time" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="cuisine"
