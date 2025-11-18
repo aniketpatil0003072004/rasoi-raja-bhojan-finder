@@ -98,7 +98,7 @@ const AddMessForm = () => {
       contact: "",
       operating_hours: "",
       offers_delivery: false,
-      cuisine: "" as any,
+      cuisine: [],
     },
   });
 
@@ -219,33 +219,75 @@ const AddMessForm = () => {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="pricing_plans.0.month"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Month</FormLabel>
-              <FormControl>
-                <Input type="number" placeholder="1 - 12" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
-        <FormField
-          control={form.control}
-          name="pricing_plans.0.price"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Price (INR)</FormLabel>
-              <FormControl>
-                <Input type="number" placeholder="Enter price" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="space-y-4">
+          <FormLabel className="text-lg font-medium">Pricing Plans</FormLabel>
+
+          {form.watch("pricing_plans").map((plan, index) => (
+            <div key={index} className="flex items-center gap-4">
+              <FormField
+                control={form.control}
+                name={`pricing_plans.${index}.month`}
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel>Month(s)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="1 - 12" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={`pricing_plans.${index}.price`}
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel>Price</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Enter price"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {index !== 0 && (
+                <Button
+                  className="flex self-end"
+                  type="button"
+                  variant="destructive"
+                  onClick={() => {
+                    const updated = [...form.getValues("pricing_plans")];
+                    updated.splice(index, 1);
+                    form.setValue("pricing_plans", updated);
+                  }}
+                >
+                  X
+                </Button>
+              )}
+            </div>
+          ))}
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() =>
+              form.setValue("pricing_plans", [
+                ...form.getValues("pricing_plans"),
+                { month: 1, price: 0 },
+              ])
+            }
+          >
+            Add Month Plan
+          </Button>
+        </div>
+
         <FormField
           control={form.control}
           name="contact"
