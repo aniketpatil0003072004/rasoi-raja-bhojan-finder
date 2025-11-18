@@ -35,6 +35,24 @@ const messFormSchema = z.object({
     .string()
     .min(10, "Description must be at least 10 characters."),
   address: z.string().min(5, "Address is required."),
+  breakfast: z.string().transform((v) =>
+    v
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+  ),
+  lunch: z.string().transform((v) =>
+    v
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+  ),
+  dinner: z.string().transform((v) =>
+    v
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+  ),
   weekly_plan_price: z.coerce.number(),
   pricing_plans: z.array(
     z.object({
@@ -100,7 +118,10 @@ const AddMessForm = () => {
       contact: "",
       operating_hours: "",
       offers_delivery: false,
-      cuisine: [],
+      cuisine: "" as any,
+      breakfast: "" as any,
+      lunch: "" as any,
+      dinner: "" as any,
     },
   });
 
@@ -363,6 +384,73 @@ const AddMessForm = () => {
             </FormItem>
           )}
         />
+
+        <div className="space-y-4">
+          <FormLabel className="text-lg font-medium">General Menu</FormLabel>
+
+          {/* Breakfast */}
+          <FormField
+            control={form.control}
+            name="breakfast"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Breakfast Items</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Idli, Dosa, Upma"
+                    {...field}
+                    value={field.value as unknown as string}
+                    onChange={(e) => field.onChange(e.target.value)}
+                  />
+                </FormControl>
+                <FormDescription>Enter comma-separated items.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Lunch */}
+          <FormField
+            control={form.control}
+            name="lunch"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Lunch Items</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Rice, Sambar, Rasam, Roti"
+                    {...field}
+                    value={field.value as unknown as string}
+                    onChange={(e) => field.onChange(e.target.value)}
+                  />
+                </FormControl>
+                <FormDescription>Enter comma-separated items.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Dinner */}
+          <FormField
+            control={form.control}
+            name="dinner"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Dinner Items</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Chapati, Curry, Rice"
+                    {...field}
+                    value={field.value as unknown as string}
+                    onChange={(e) => field.onChange(e.target.value)}
+                  />
+                </FormControl>
+                <FormDescription>Enter comma-separated items.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="image"
