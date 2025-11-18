@@ -35,7 +35,16 @@ const messFormSchema = z.object({
     .string()
     .min(10, "Description must be at least 10 characters."),
   address: z.string().min(5, "Address is required."),
-  monthly_price: z.coerce.number().positive("Price must be a positive number."),
+  pricing_plans: z.array(
+    z.object({
+      month: z.coerce
+        .number()
+        .positive("Month must be a positive number.")
+        .max(12, "Month cannot be more than 12.")
+        .min(1, "Month must be at least 1."),
+      price: z.coerce.number().positive("Price must be a positive number."),
+    })
+  ),
   contact: z.string().min(10, "Contact number is required."),
   operating_hours: z.string().min(5, "Operating hours are required."),
   offers_delivery: z.boolean().default(false),
@@ -80,7 +89,12 @@ const AddMessForm = () => {
       name: "",
       description: "",
       address: "",
-      monthly_price: 0,
+      pricing_plans: [
+        {
+          month: 1,
+          price: 1234,
+        },
+      ],
       contact: "",
       operating_hours: "",
       offers_delivery: false,
@@ -120,7 +134,7 @@ const AddMessForm = () => {
         name: values.name,
         description: values.description,
         address: values.address,
-        monthly_price: values.monthly_price,
+        pricing_plans: values.pricing_plans,
         contact: values.contact,
         operating_hours: values.operating_hours,
         offers_delivery: values.offers_delivery,
@@ -207,12 +221,26 @@ const AddMessForm = () => {
         />
         <FormField
           control={form.control}
-          name="monthly_price"
+          name="pricing_plans.0.month"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Monthly Price (INR)</FormLabel>
+              <FormLabel>Month</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input type="number" placeholder="1 - 12" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="pricing_plans.0.price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Price (INR)</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="Enter price" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
