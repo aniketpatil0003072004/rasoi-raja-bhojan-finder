@@ -28,14 +28,20 @@ const ActiveSubscriptions = () => {
     {
       id: "",
       name: "",
+      address: "",
+      phone: "",
     },
   ]);
+
+  console.log(subscriptions);
 
   useEffect(() => {
     if (subscriptions) {
       const mapped = subscriptions.map((sub) => ({
         id: sub.id,
         name: sub.user.full_name,
+        phone: sub.user.phone_number,
+        address: sub.user.address,
       }));
 
       setSubsIdsName(mapped);
@@ -167,8 +173,8 @@ const ActiveSubscriptions = () => {
                   {subsIdsName.map((d) => (
                     <TableRow key={d.id}>
                       <TableCell>{d.name}</TableCell>
-                      {/* <TableCell>{d.phone_number}</TableCell> */}
-                      {/* <TableCell>{d.user?.address}</TableCell> */}
+                      <TableCell>{d.phone}</TableCell>
+                      <TableCell>{d.address}</TableCell>
                       {/* <TableCell className="font-medium">
                         {d.breakfast ? "🍳 Breakfast " : ""}
                         {d.lunch ? "🍛 Lunch " : ""}
