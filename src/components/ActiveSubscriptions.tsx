@@ -63,36 +63,67 @@ const ActiveSubscriptions = () => {
   } = useQuery({
     queryKey: ["cancel_meals_data", messId],
     queryFn: () => getCancelMealTodayData(messId!),
-    enabled: !!messId, // Only run query if messId exists
+    enabled: !!messId,
   });
+
+  // Group cancelled meals by user and meal type
+  const userMealStatus = useMemo(() => {
+    if (!cancelMealData) return new Map();
+
+    const statusMap = new Map();
+
+    cancelMealData.forEach((skip) => {
+      if (!statusMap.has(skip.user_id)) {
+        statusMap.set(skip.user_id, {
+          user: skip.user,
+          breakfast: false,
+          lunch: false,
+          dinner: false,
+        });
+      }
+
+      const userStatus = statusMap.get(skip.user_id);
+
+      // Mark the specific meal type as cancelled
+      if (skip.meal_type === "breakfast") {
+        userStatus.breakfast = true;
+      } else if (skip.meal_type === "lunch") {
+        userStatus.lunch = true;
+      } else if (skip.meal_type === "dinner") {
+        userStatus.dinner = true;
+      }
+    });
+
+    return statusMap;
+  }, [cancelMealData]);
+
+  // Get list of users who have cancelled at least one meal
+  const usersWithCancellations = useMemo(() => {
+    return Array.from(userMealStatus.values());
+  }, [userMealStatus]);
 
   // Filter active deliveries (students who haven't cancelled all meals)
   const activeDeliveries = useMemo(() => {
-    if (!subscriptions || !cancelMealData) return subscriptions || [];
+    if (!subscriptions) return [];
 
-    // Create a map of user cancellations
-    const cancellationMap = new Map();
-    cancelMealData.forEach((skip) => {
-      cancellationMap.set(skip.user_id, {
-        breakfast: skip.breakfast_cancelled,
-        lunch: skip.lunch_cancelled,
-        dinner: skip.dinner_cancelled,
+    return subscriptions
+      .map((sub) => {
+        const cancellations = userMealStatus.get(sub.user_id);
+
+        return {
+          ...sub,
+          meals: {
+            breakfast: !cancellations?.breakfast,
+            lunch: !cancellations?.lunch,
+            dinner: !cancellations?.dinner,
+          },
+        };
+      })
+      .filter((sub) => {
+        // Only include if at least one meal is active
+        return sub.meals.breakfast || sub.meals.lunch || sub.meals.dinner;
       });
-    });
-
-    // Filter subscriptions to show only those with at least one active meal
-    return subscriptions.filter((sub) => {
-      const cancellation = cancellationMap.get(sub.user_id);
-      if (!cancellation) return true; // No cancellation means all meals active
-
-      // If all meals are cancelled, exclude from delivery list
-      return !(
-        cancellation.breakfast &&
-        cancellation.lunch &&
-        cancellation.dinner
-      );
-    });
-  }, [subscriptions, cancelMealData]);
+  }, [subscriptions, userMealStatus]);
 
   if (isLoading || cancelMealLoading) {
     return (
@@ -125,7 +156,7 @@ const ActiveSubscriptions = () => {
         <Tabs defaultValue="cancelled">
           <TabsList className="w-full flex">
             <TabsTrigger className="flex-1" value="cancelled">
-              Cancelled Meals ({cancelMealData?.length || 0})
+              Cancelled Meals ({usersWithCancellations.length})
             </TabsTrigger>
             <TabsTrigger className="flex-1" value="delivery">
               Delivery List ({activeDeliveries?.length || 0})
@@ -141,7 +172,7 @@ const ActiveSubscriptions = () => {
                   {(error || cancelMealError)?.message}
                 </AlertDescription>
               </Alert>
-            ) : !cancelMealData || cancelMealData.length === 0 ? (
+            ) : usersWithCancellations.length === 0 ? (
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertTitle>No Cancelled Meals</AlertTitle>
@@ -161,13 +192,13 @@ const ActiveSubscriptions = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {cancelMealData.map((meal) => (
-                      <TableRow key={meal.id}>
+                    {usersWithCancellations.map((userStatus, index) => (
+                      <TableRow key={`${userStatus.user?.id}-${index}`}>
                         <TableCell className="font-medium">
-                          {meal.user?.full_name || "Unknown"}
+                          {userStatus.user?.full_name || "Unknown"}
                         </TableCell>
                         <TableCell className="text-center">
-                          {meal.breakfast_cancelled ? (
+                          {userStatus.breakfast ? (
                             <span className="text-red-600 font-semibold">
                               ❌ Cancelled
                             </span>
@@ -176,7 +207,7 @@ const ActiveSubscriptions = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-center">
-                          {meal.lunch_cancelled ? (
+                          {userStatus.lunch ? (
                             <span className="text-red-600 font-semibold">
                               ❌ Cancelled
                             </span>
@@ -185,7 +216,7 @@ const ActiveSubscriptions = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-center">
-                          {meal.dinner_cancelled ? (
+                          {userStatus.dinner ? (
                             <span className="text-red-600 font-semibold">
                               ❌ Cancelled
                             </span>
@@ -213,7 +244,8 @@ const ActiveSubscriptions = () => {
                 <Info className="h-4 w-4" />
                 <AlertTitle>No Deliveries Today</AlertTitle>
                 <AlertDescription>
-                  There are no students scheduled for delivery today.
+                  All meals have been cancelled for today, or there are no
+                  active subscriptions.
                 </AlertDescription>
               </Alert>
             ) : (
@@ -224,34 +256,24 @@ const ActiveSubscriptions = () => {
                       <TableHead>Student</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Address</TableHead>
-                      <TableHead>Meals Today</TableHead>
+                      <TableHead>Meals to Deliver</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {activeDeliveries.map((sub) => {
-                      // Get cancellation info for this user
-                      const cancellation = cancelMealData?.find(
-                        (skip) => skip.user_id === sub.user_id
-                      );
-
-                      return (
-                        <TableRow key={sub.id}>
-                          <TableCell className="font-medium">
-                            {sub.user?.full_name || "Unknown"}
-                          </TableCell>
-                          <TableCell>
-                            {sub.user?.phone_number || "N/A"}
-                          </TableCell>
-                          <TableCell>{sub.user?.address || "N/A"}</TableCell>
-                          <TableCell className="font-medium">
-                            {!cancellation?.breakfast_cancelled &&
-                              "🍳 Breakfast "}
-                            {!cancellation?.lunch_cancelled && "🍛 Lunch "}
-                            {!cancellation?.dinner_cancelled && "🍽️ Dinner"}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                    {activeDeliveries.map((sub) => (
+                      <TableRow key={sub.id}>
+                        <TableCell className="font-medium">
+                          {sub.user?.full_name || "Unknown"}
+                        </TableCell>
+                        <TableCell>{sub.user?.phone_number || "N/A"}</TableCell>
+                        <TableCell>{sub.user?.address || "N/A"}</TableCell>
+                        <TableCell className="font-medium">
+                          {sub.meals.breakfast && "🍳 Breakfast "}
+                          {sub.meals.lunch && "🍛 Lunch "}
+                          {sub.meals.dinner && "🍽️ Dinner"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
