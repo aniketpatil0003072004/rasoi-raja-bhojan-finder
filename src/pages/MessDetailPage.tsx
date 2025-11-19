@@ -85,7 +85,6 @@ const MessDetailPage = () => {
       .select("*")
       .eq("mess_id", messId)
       .eq("user_id", userId)
-      .eq("status", "active")
       .maybeSingle();
 
     if (error) {

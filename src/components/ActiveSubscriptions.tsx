@@ -24,35 +24,17 @@ import { useEffect, useState } from "react";
 
 const ActiveSubscriptions = () => {
   const { subscriptions, isLoading, error } = useOwnerSubscriptions("active");
-  const [subsIdsName, setSubsIdsName] = useState([
-    {
-      id: "",
-      name: "",
-      address: "",
-      phone: "",
-    },
-  ]);
+  const [messId, setMessId] = useState("");
+  useEffect(() => {
+    setMessId(subscriptions[0].mess_id);
+  }, [subscriptions]);
 
   console.log(subscriptions);
 
-  useEffect(() => {
-    if (subscriptions) {
-      const mapped = subscriptions.map((sub) => ({
-        id: sub.id,
-        name: sub.user.full_name,
-        phone: sub.user.phone_number,
-        address: sub.user.address,
-      }));
+  const getCancelMealTodayData = async () => {
+    const { data, error } = await supabase.from("meal_skips").select("*");
 
-      setSubsIdsName(mapped);
-    }
-  }, [subscriptions]);
-
-  const getCancelMealData = async () => {
-    const { data, error } = await supabase
-      .from("meal_skips")
-      .select("*")
-      .in("subscription_id", subsIds);
+    console.log(data);
 
     if (error) throw new Error(error.message);
     return data || [];
@@ -63,9 +45,13 @@ const ActiveSubscriptions = () => {
     error: cancleMealError,
     isLoading: cancelMealLoading,
   } = useQuery({
-    queryKey: ["cancel_meals"],
-    queryFn: () => getCancelMealData(),
+    queryKey: ["cancel_meals_data"],
+    queryFn: () => getCancelMealTodayData(),
   });
+
+  if (isLoading && cancelMealLoading) {
+    return <p>Loading....</p>;
+  }
 
   return (
     <Card>
@@ -151,7 +137,7 @@ const ActiveSubscriptions = () => {
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error.message}</AlertDescription>
               </Alert>
-            ) : !subsIdsName || subsIdsName.length === 0 ? (
+            ) : !subscriptions || subscriptions.length === 0 ? (
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertTitle>No Deliveries Today</AlertTitle>
@@ -166,15 +152,15 @@ const ActiveSubscriptions = () => {
                     <TableHead>Student</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Address</TableHead>
-                    <TableHead>Meals Today</TableHead>
+                    {/* <TableHead>Meals Today</TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {subsIdsName.map((d) => (
+                  {subscriptions.map((d) => (
                     <TableRow key={d.id}>
-                      <TableCell>{d.name}</TableCell>
-                      <TableCell>{d.phone}</TableCell>
-                      <TableCell>{d.address}</TableCell>
+                      <TableCell>{d.user.full_name}</TableCell>
+                      <TableCell>{d.user.phone_number}</TableCell>
+                      <TableCell>{d.user.address}</TableCell>
                       {/* <TableCell className="font-medium">
                         {d.breakfast ? "🍳 Breakfast " : ""}
                         {d.lunch ? "🍛 Lunch " : ""}

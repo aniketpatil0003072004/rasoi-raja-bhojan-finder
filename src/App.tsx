@@ -23,6 +23,7 @@ import DeliveryDetailsPage from "./pages/DeliveryDetailsPage";
 import { SubscriptionExpirationDialog } from "./components/SubscriptionExpirationDialog";
 import SignUpPage from "./pages/SignUp";
 import SignInPage from "./pages/SignIn";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,7 @@ const App = () => (
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
+    <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>
 );
 

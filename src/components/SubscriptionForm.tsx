@@ -201,7 +201,6 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
           start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),
           payment_screenshot_url: uploadData.path,
-          status: "pending_owner_confirmation",
           plan_duration_months: selectedPlan.months,
           plan_price: selectedPlan.price,
         });
