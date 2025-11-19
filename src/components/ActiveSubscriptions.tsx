@@ -20,21 +20,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOwnerSubscriptions } from "@/hooks/useOwnerSubscriptions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
 const ActiveSubscriptions = () => {
-  const { subscriptions, isLoading, error } = useOwnerSubscriptions("active");
-  const [messId, setMessId] = useState("");
-  useEffect(() => {
-    setMessId(subscriptions[0].mess_id);
+  const { subscriptions, isLoading, error } = useOwnerSubscriptions();
+
+  // Get mess_id from the first subscription
+  const messId = useMemo(() => {
+    return subscriptions && subscriptions.length > 0
+      ? subscriptions[0].mess_id
+      : null;
   }, [subscriptions]);
 
-  console.log(subscriptions);
+  // Fetch cancelled meals for today for this specific mess
+  const getCancelMealTodayData = async (messId: string) => {
+    const today = new Date().toISOString().split("T")[0];
 
-  const getCancelMealTodayData = async () => {
-    const { data, error } = await supabase.from("meal_skips").select("*");
-
-    console.log(data);
+    const { data, error } = await supabase
+      .from("meal_skips")
+      .select(
+        `
+        *,
+        user:user_id (
+          id,
+          full_name,
+          phone_number,
+          address
+        )
+      `
+      )
+      .eq("mess_id", messId)
+      .eq("skip_date", today);
 
     if (error) throw new Error(error.message);
     return data || [];
@@ -42,15 +58,58 @@ const ActiveSubscriptions = () => {
 
   const {
     data: cancelMealData,
-    error: cancleMealError,
+    error: cancelMealError,
     isLoading: cancelMealLoading,
   } = useQuery({
-    queryKey: ["cancel_meals_data"],
-    queryFn: () => getCancelMealTodayData(),
+    queryKey: ["cancel_meals_data", messId],
+    queryFn: () => getCancelMealTodayData(messId!),
+    enabled: !!messId, // Only run query if messId exists
   });
 
-  if (isLoading && cancelMealLoading) {
-    return <p>Loading....</p>;
+  // Filter active deliveries (students who haven't cancelled all meals)
+  const activeDeliveries = useMemo(() => {
+    if (!subscriptions || !cancelMealData) return subscriptions || [];
+
+    // Create a map of user cancellations
+    const cancellationMap = new Map();
+    cancelMealData.forEach((skip) => {
+      cancellationMap.set(skip.user_id, {
+        breakfast: skip.breakfast_cancelled,
+        lunch: skip.lunch_cancelled,
+        dinner: skip.dinner_cancelled,
+      });
+    });
+
+    // Filter subscriptions to show only those with at least one active meal
+    return subscriptions.filter((sub) => {
+      const cancellation = cancellationMap.get(sub.user_id);
+      if (!cancellation) return true; // No cancellation means all meals active
+
+      // If all meals are cancelled, exclude from delivery list
+      return !(
+        cancellation.breakfast &&
+        cancellation.lunch &&
+        cancellation.dinner
+      );
+    });
+  }, [subscriptions, cancelMealData]);
+
+  if (isLoading || cancelMealLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Meal Management</CardTitle>
+          <CardDescription>Loading...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -58,7 +117,7 @@ const ActiveSubscriptions = () => {
       <CardHeader>
         <CardTitle>Meal Management</CardTitle>
         <CardDescription>
-          Track cancelled meals & today’s delivery list.
+          Track cancelled meals & today's delivery list.
         </CardDescription>
       </CardHeader>
 
@@ -66,24 +125,21 @@ const ActiveSubscriptions = () => {
         <Tabs defaultValue="cancelled">
           <TabsList className="w-full flex">
             <TabsTrigger className="flex-1" value="cancelled">
-              Cancelled Meals
+              Cancelled Meals ({cancelMealData?.length || 0})
             </TabsTrigger>
             <TabsTrigger className="flex-1" value="delivery">
-              Delivery List
+              Delivery List ({activeDeliveries?.length || 0})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="cancelled">
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-              </div>
-            ) : error ? (
+            {error || cancelMealError ? (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error.message}</AlertDescription>
+                <AlertDescription>
+                  {(error || cancelMealError)?.message}
+                </AlertDescription>
               </Alert>
             ) : !cancelMealData || cancelMealData.length === 0 ? (
               <Alert>
@@ -94,50 +150,65 @@ const ActiveSubscriptions = () => {
                 </AlertDescription>
               </Alert>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Breakfast</TableHead>
-                    <TableHead>Lunch</TableHead>
-                    <TableHead>Dinner</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {cancelMealData.map((meal) => (
-                    <TableRow key={meal.id}>
-                      <TableCell>{meal.user.full_name}</TableCell>
-                      <TableCell>
-                        {meal.breakfast_cancelled
-                          ? "❌ Cancelled"
-                          : "✔️ Active"}
-                      </TableCell>
-                      <TableCell>
-                        {meal.lunch_cancelled ? "❌ Cancelled" : "✔️ Active"}
-                      </TableCell>
-                      <TableCell>
-                        {meal.dinner_cancelled ? "❌ Cancelled" : "✔️ Active"}
-                      </TableCell>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead className="text-center">Breakfast</TableHead>
+                      <TableHead className="text-center">Lunch</TableHead>
+                      <TableHead className="text-center">Dinner</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {cancelMealData.map((meal) => (
+                      <TableRow key={meal.id}>
+                        <TableCell className="font-medium">
+                          {meal.user?.full_name || "Unknown"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {meal.breakfast_cancelled ? (
+                            <span className="text-red-600 font-semibold">
+                              ❌ Cancelled
+                            </span>
+                          ) : (
+                            <span className="text-green-600">✔️ Active</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {meal.lunch_cancelled ? (
+                            <span className="text-red-600 font-semibold">
+                              ❌ Cancelled
+                            </span>
+                          ) : (
+                            <span className="text-green-600">✔️ Active</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {meal.dinner_cancelled ? (
+                            <span className="text-red-600 font-semibold">
+                              ❌ Cancelled
+                            </span>
+                          ) : (
+                            <span className="text-green-600">✔️ Active</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </TabsContent>
 
           <TabsContent value="delivery">
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-              </div>
-            ) : error ? (
+            {error ? (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error.message}</AlertDescription>
               </Alert>
-            ) : !subscriptions || subscriptions.length === 0 ? (
+            ) : !activeDeliveries || activeDeliveries.length === 0 ? (
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertTitle>No Deliveries Today</AlertTitle>
@@ -146,30 +217,44 @@ const ActiveSubscriptions = () => {
                 </AlertDescription>
               </Alert>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Address</TableHead>
-                    {/* <TableHead>Meals Today</TableHead> */}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {subscriptions.map((d) => (
-                    <TableRow key={d.id}>
-                      <TableCell>{d.user.full_name}</TableCell>
-                      <TableCell>{d.user.phone_number}</TableCell>
-                      <TableCell>{d.user.address}</TableCell>
-                      {/* <TableCell className="font-medium">
-                        {d.breakfast ? "🍳 Breakfast " : ""}
-                        {d.lunch ? "🍛 Lunch " : ""}
-                        {d.dinner ? "🍽️ Dinner " : ""}
-                      </TableCell> */}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Address</TableHead>
+                      <TableHead>Meals Today</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {activeDeliveries.map((sub) => {
+                      // Get cancellation info for this user
+                      const cancellation = cancelMealData?.find(
+                        (skip) => skip.user_id === sub.user_id
+                      );
+
+                      return (
+                        <TableRow key={sub.id}>
+                          <TableCell className="font-medium">
+                            {sub.user?.full_name || "Unknown"}
+                          </TableCell>
+                          <TableCell>
+                            {sub.user?.phone_number || "N/A"}
+                          </TableCell>
+                          <TableCell>{sub.user?.address || "N/A"}</TableCell>
+                          <TableCell className="font-medium">
+                            {!cancellation?.breakfast_cancelled &&
+                              "🍳 Breakfast "}
+                            {!cancellation?.lunch_cancelled && "🍛 Lunch "}
+                            {!cancellation?.dinner_cancelled && "🍽️ Dinner"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </TabsContent>
         </Tabs>

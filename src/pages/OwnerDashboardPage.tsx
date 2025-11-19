@@ -1,13 +1,8 @@
-import React, { useEffect, useState } from "react";
-import SubscriptionManagement from "@/components/SubscriptionManagement";
 import ActiveSubscriptions from "@/components/ActiveSubscriptions";
-import DeliveryManagement from "@/components/DeliveryManagement";
-import MessManagement from "@/components/MessManagement";
-import { OwnerMealSkipsView } from "@/components/OwnerMealSkipsView";
-import { OwnerCancellationTimer } from "@/components/OwnerCancellationTimer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const OwnerDashboardPage = () => {

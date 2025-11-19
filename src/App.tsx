@@ -41,6 +41,7 @@ const Layout = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ReactQueryDevtools initialIsOpen={false} />
     <TooltipProvider>
       <AuthProvider>
         {" "}
@@ -77,7 +78,6 @@ const App = () => (
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
-    <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>
 );
 

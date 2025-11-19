@@ -1,25 +1,22 @@
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { SubscriptionWithDetails, Subscription } from "@/types";
-import { useAuth } from "@/contexts/AuthContext";
+import { SubscriptionWithDetails } from "@/types";
+import { useQuery } from "@tanstack/react-query";
 import { useOwnerMesses } from "./useOwnerMesses";
-import React from "react";
 
 const fetchSubscriptionsByStatus = async (
-  messIds: string[],
-  status: Subscription["status"]
+  messIds: string[]
 ): Promise<SubscriptionWithDetails[]> => {
   if (messIds.length === 0) return [];
   const { data, error } = await supabase
     .from("subscriptions")
     .select("*, user(full_name, address, phone_number), messes(name, address)")
-    .in("mess_id", messIds)
-    .eq("status", status);
+    .in("mess_id", messIds);
+
   if (error) throw new Error(error.message);
   return (data as SubscriptionWithDetails[]) || [];
 };
 
-export const useOwnerSubscriptions = (status: Subscription["status"]) => {
+export const useOwnerSubscriptions = () => {
   const userData = sessionStorage.getItem("user");
   const user = JSON.parse(userData);
   const {
@@ -33,8 +30,8 @@ export const useOwnerSubscriptions = (status: Subscription["status"]) => {
     isLoading: isSubsLoading,
     error: subsError,
   } = useQuery({
-    queryKey: ["ownerSubscriptions", status, messIds],
-    queryFn: () => fetchSubscriptionsByStatus(messIds, status),
+    queryKey: ["ownerSubscriptions", messIds],
+    queryFn: () => fetchSubscriptionsByStatus(messIds),
     enabled: !!user && messIds.length > 0 && !isMessesLoading,
   });
 

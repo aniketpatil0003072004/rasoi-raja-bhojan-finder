@@ -40,8 +40,10 @@ export const MealSkipForm = ({
     useState<string>("23:00");
   const { createMealSkip } = useMealSkips(subscriptionId);
 
-  console.log(cancellationDeadlineTime);
   const lastCancelTime = cancellationDeadlineTime.split(":")[0];
+
+  const userData = sessionStorage.getItem("user");
+  const user = JSON.parse(userData);
 
   const getISTDate = () => {
     return new Date(
@@ -99,6 +101,8 @@ export const MealSkipForm = ({
       await createMealSkip.mutateAsync({
         subscription_id: subscriptionId,
         skip_date: todayStr,
+        mess_id: messId,
+        user_id: user.id,
         meal_type: mealType as "breakfast" | "lunch" | "dinner",
         reason: todayReason || undefined,
       });
@@ -161,6 +165,8 @@ export const MealSkipForm = ({
         await createMealSkip.mutateAsync({
           subscription_id: subscriptionId,
           skip_date: dateStr,
+          mess_id: messId,
+          user_id: user.id,
           meal_type: mealType as "breakfast" | "lunch" | "dinner",
           reason: rangeReason || undefined,
         });
