@@ -39,123 +39,12 @@ export type Database = {
   };
   public: {
     Tables: {
-      deliveries: {
-        Row: {
-          created_at: string;
-          delivery_date: string;
-          delivery_food_photo_url: string | null;
-          delivery_house_photo_url: string | null;
-          delivery_person_id: string | null;
-          id: string;
-          mess_id: string;
-          pickup_food_photo_url: string | null;
-          pickup_mess_photo_url: string | null;
-          // status: Database["public"]["Enums"]["delivery_status"];
-          subscription_id: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          delivery_date?: string;
-          delivery_food_photo_url?: string | null;
-          delivery_house_photo_url?: string | null;
-          delivery_person_id?: string | null;
-          id?: string;
-          mess_id: string;
-          pickup_food_photo_url?: string | null;
-          pickup_mess_photo_url?: string | null;
-          // status?: Database["public"]["Enums"]["delivery_status"];
-          subscription_id: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          delivery_date?: string;
-          delivery_food_photo_url?: string | null;
-          delivery_house_photo_url?: string | null;
-          delivery_person_id?: string | null;
-          id?: string;
-          mess_id?: string;
-          pickup_food_photo_url?: string | null;
-          pickup_mess_photo_url?: string | null;
-          // status?: Database["public"]["Enums"]["delivery_status"];
-          subscription_id?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "deliveries_delivery_person_id_fkey";
-            columns: ["delivery_person_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "deliveries_mess_id_fkey";
-            columns: ["mess_id"];
-            isOneToOne: false;
-            referencedRelation: "messes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "deliveries_subscription_id_fkey";
-            columns: ["subscription_id"];
-            isOneToOne: false;
-            referencedRelation: "subscriptions";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      delivery_notifications: {
-        Row: {
-          created_at: string;
-          delivery_id: string;
-          id: string;
-          is_read: boolean;
-          message: string;
-          // status: Database["public"]["Enums"]["delivery_status"];
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          delivery_id: string;
-          id?: string;
-          is_read?: boolean;
-          message: string;
-          // status: Database["public"]["Enums"]["delivery_status"];
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          delivery_id?: string;
-          id?: string;
-          is_read?: boolean;
-          message?: string;
-          // status?: Database["public"]["Enums"]["delivery_status"];
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "delivery_notifications_delivery_id_fkey";
-            columns: ["delivery_id"];
-            isOneToOne: false;
-            referencedRelation: "deliveries";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "delivery_notifications_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
       meal_skips: {
         Row: {
           created_at: string | null;
           id: string;
           meal_type: Database["public"]["Enums"]["meal_type"];
+          mess_id: string | null;
           reason: string | null;
           skip_date: string;
           subscription_id: string;
@@ -164,6 +53,7 @@ export type Database = {
           created_at?: string | null;
           id?: string;
           meal_type: Database["public"]["Enums"]["meal_type"];
+          mess_id?: string | null;
           reason?: string | null;
           skip_date: string;
           subscription_id: string;
@@ -172,81 +62,24 @@ export type Database = {
           created_at?: string | null;
           id?: string;
           meal_type?: Database["public"]["Enums"]["meal_type"];
+          mess_id?: string | null;
           reason?: string | null;
           skip_date?: string;
           subscription_id?: string;
         };
         Relationships: [
           {
+            foreignKeyName: "meal_skips_mess_id_fkey";
+            columns: ["mess_id"];
+            isOneToOne: false;
+            referencedRelation: "messes";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "meal_skips_subscription_id_fkey";
             columns: ["subscription_id"];
             isOneToOne: false;
             referencedRelation: "subscriptions";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      menus: {
-        Row: {
-          breakfast: string | null;
-          dinner: string | null;
-          id: string;
-          lunch: string | null;
-          mess_id: string;
-        };
-        Insert: {
-          breakfast?: string | null;
-          dinner?: string | null;
-          id?: string;
-          lunch?: string | null;
-          mess_id: string;
-        };
-        Update: {
-          breakfast?: string | null;
-          dinner?: string | null;
-          id?: string;
-          lunch?: string | null;
-          mess_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "menus_mess_id_fkey";
-            columns: ["mess_id"];
-            isOneToOne: false;
-            referencedRelation: "messes";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      mess_delivery_personnel: {
-        Row: {
-          created_at: string;
-          delivery_person_id: string;
-          mess_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          delivery_person_id: string;
-          mess_id: string;
-        };
-        Update: {
-          created_at?: string;
-          delivery_person_id?: string;
-          mess_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "mess_delivery_personnel_delivery_person_id_fkey";
-            columns: ["delivery_person_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "mess_delivery_personnel_mess_id_fkey";
-            columns: ["mess_id"];
-            isOneToOne: false;
-            referencedRelation: "messes";
             referencedColumns: ["id"];
           }
         ];
@@ -349,47 +182,6 @@ export type Database = {
           }
         ];
       };
-      profiles: {
-        Row: {
-          address: string | null;
-          avatar_url: string | null;
-          email: string | null;
-          full_name: string | null;
-          id: string;
-          mess_id: string | null;
-          phone_number: string | null;
-          role: Database["public"]["Enums"]["app_role"];
-        };
-        Insert: {
-          address?: string | null;
-          avatar_url?: string | null;
-          email?: string | null;
-          full_name?: string | null;
-          id: string;
-          mess_id?: string | null;
-          phone_number?: string | null;
-          role: Database["public"]["Enums"]["app_role"];
-        };
-        Update: {
-          address?: string | null;
-          avatar_url?: string | null;
-          email?: string | null;
-          full_name?: string | null;
-          id?: string;
-          mess_id?: string | null;
-          phone_number?: string | null;
-          role?: Database["public"]["Enums"]["app_role"];
-        };
-        Relationships: [
-          {
-            foreignKeyName: "profiles_mess_id_fkey";
-            columns: ["mess_id"];
-            isOneToOne: false;
-            referencedRelation: "messes";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
       subscriptions: {
         Row: {
           created_at: string;
@@ -403,7 +195,6 @@ export type Database = {
           plan_duration_months: number | null;
           plan_price: number | null;
           start_date: string;
-          // status: Database["public"]["Enums"]["subscription_status"];
           user_id: string;
         };
         Insert: {
@@ -418,7 +209,6 @@ export type Database = {
           plan_duration_months?: number | null;
           plan_price?: number | null;
           start_date: string;
-          // status?: Database["public"]["Enums"]["subscription_status"];
           user_id: string;
         };
         Update: {
@@ -433,7 +223,6 @@ export type Database = {
           plan_duration_months?: number | null;
           plan_price?: number | null;
           start_date?: string;
-          // status?: Database["public"]["Enums"]["subscription_status"];`
           user_id?: string;
         };
         Relationships: [
@@ -524,33 +313,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      user_tokens: {
-        Row: {
-          created_at: string | null;
-          id: string;
-          is_used: boolean | null;
-          role: Database["public"]["Enums"]["app_role"];
-          token: string;
-          user_id: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          id?: string;
-          is_used?: boolean | null;
-          role: Database["public"]["Enums"]["app_role"];
-          token: string;
-          user_id?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          id?: string;
-          is_used?: boolean | null;
-          role?: Database["public"]["Enums"]["app_role"];
-          token?: string;
-          user_id?: string | null;
-        };
-        Relationships: [];
-      };
     };
     Views: {
       [_ in never]: never;
@@ -614,17 +376,17 @@ export type Database = {
         | "Friday"
         | "Saturday"
         | "Sunday";
-      // delivery_status:
-      //   | "pending_assignment"
-      //   | "assigned"
-      //   | "out_for_delivery"
-      //   | "delivered"
-      //   | "failed"
-      //   | "food_preparing"
-      //   | "food_ready"
-      //   | "picked_up";
+      delivery_status:
+        | "pending_assignment"
+        | "assigned"
+        | "out_for_delivery"
+        | "delivered"
+        | "failed"
+        | "food_preparing"
+        | "food_ready"
+        | "picked_up";
       meal_type: "breakfast" | "lunch" | "dinner";
-      // subscription_status: "pending_owner_confirmation" | "active" | "rejected";
+      subscription_status: "pending_owner_confirmation" | "active" | "rejected";
     };
     CompositeTypes: {
       [_ in never]: never;
