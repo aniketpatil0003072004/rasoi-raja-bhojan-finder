@@ -24,12 +24,21 @@ import { useEffect, useState } from "react";
 
 const ActiveSubscriptions = () => {
   const { subscriptions, isLoading, error } = useOwnerSubscriptions("active");
-  const [subsIds, setSubsIds] = useState<string[]>([]);
+  const [subsIdsName, setSubsIdsName] = useState([
+    {
+      id: "",
+      name: "",
+    },
+  ]);
 
   useEffect(() => {
     if (subscriptions) {
-      const ids = subscriptions.map((sub) => sub.id);
-      setSubsIds(ids);
+      const mapped = subscriptions.map((sub) => ({
+        id: sub.id,
+        name: sub.user.full_name,
+      }));
+
+      setSubsIdsName(mapped);
     }
   }, [subscriptions]);
 
@@ -136,7 +145,7 @@ const ActiveSubscriptions = () => {
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error.message}</AlertDescription>
               </Alert>
-            ) : !deliveryList || deliveryList.length === 0 ? (
+            ) : !subsIdsName || subsIdsName.length === 0 ? (
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertTitle>No Deliveries Today</AlertTitle>
@@ -155,16 +164,16 @@ const ActiveSubscriptions = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {deliveryList.map((d) => (
+                  {subsIdsName.map((d) => (
                     <TableRow key={d.id}>
-                      <TableCell>{d.user?.full_name}</TableCell>
-                      <TableCell>{d.user?.phone_number}</TableCell>
-                      <TableCell>{d.user?.address}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell>{d.name}</TableCell>
+                      {/* <TableCell>{d.phone_number}</TableCell> */}
+                      {/* <TableCell>{d.user?.address}</TableCell> */}
+                      {/* <TableCell className="font-medium">
                         {d.breakfast ? "🍳 Breakfast " : ""}
                         {d.lunch ? "🍛 Lunch " : ""}
                         {d.dinner ? "🍽️ Dinner " : ""}
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   ))}
                 </TableBody>
