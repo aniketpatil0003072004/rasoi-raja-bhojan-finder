@@ -13,7 +13,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { Menu, Mess, Profile, Subscription } from "@/types";
+import { Mess, Subscription } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle,
@@ -29,6 +29,7 @@ import {
 import { Link, useParams } from "react-router-dom";
 import AddMenuForm from "@/components/AddMenuForm";
 import SubscriptionForm from "@/components/SubscriptionForm";
+import { User } from "@supabase/supabase-js";
 
 const MessDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,19 +52,7 @@ const MessDetailPage = () => {
     return data;
   };
 
-  const fetchMenu = async (messId: string): Promise<Menu | null> => {
-    const { data, error } = await supabase
-      .from("menus")
-      .select("*")
-      .eq("mess_id", messId)
-      .single();
-    if (error && error.code !== "PGRST116") {
-      return null;
-    }
-    return data;
-  };
-
-  const fetchProfile = async (userId: string): Promise<Profile | null> => {
+  const fetchProfile = async (userId: string): Promise<User | null> => {
     const { data, error } = await supabase
       .from("user")
       .select("*")
@@ -104,16 +93,6 @@ const MessDetailPage = () => {
     enabled: !!id,
   });
 
-  const {
-    data: menu,
-    isLoading: isMenuLoading,
-    error: menuError,
-  } = useQuery({
-    queryKey: ["menu", id],
-    queryFn: () => fetchMenu(id!),
-    enabled: !!id,
-  });
-
   const { data: profile } = useQuery({
     queryKey: ["user", user?.id],
     queryFn: () => fetchProfile(user!.id),
@@ -136,11 +115,12 @@ const MessDetailPage = () => {
     }
   };
 
-  const breakfastItems = menu ? parseMenuItems(menu.breakfast) : [];
-  const lunchItems = menu ? parseMenuItems(menu.lunch) : [];
-  const dinnerItems = menu ? parseMenuItems(menu.dinner) : [];
+  // Get menu items directly from mess object
+  const breakfastItems = mess ? parseMenuItems(mess.breakfast) : [];
+  const lunchItems = mess ? parseMenuItems(mess.lunch) : [];
+  const dinnerItems = mess ? parseMenuItems(mess.dinner) : [];
 
-  const isLoading = isMessLoading || isMenuLoading;
+  const isLoading = isMessLoading;
   const isOwner = user && mess && user.id === mess.owner_id;
   const isStudent = profile?.role === "student";
 
@@ -174,11 +154,10 @@ const MessDetailPage = () => {
     );
   }
 
-  const error = messError || menuError;
-  if (error) {
+  if (messError) {
     return (
       <div className="container py-8 text-center text-xl text-destructive">
-        Error: {(error as Error).message}
+        Error: {(messError as Error).message}
       </div>
     );
   }
@@ -266,6 +245,12 @@ const MessDetailPage = () => {
                     <div>
                       <h4 className="font-semibold text-md text-primary mb-2">
                         Breakfast
+                        {mess.cancellation_deadline_time_breakfast && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            (Cancel before{" "}
+                            {mess.cancellation_deadline_time_breakfast})
+                          </span>
+                        )}
                       </h4>
                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 pl-2">
                         {breakfastItems.map((item, index) => (
@@ -278,6 +263,12 @@ const MessDetailPage = () => {
                     <div>
                       <h4 className="font-semibold text-md text-primary mb-2">
                         Lunch
+                        {mess.cancellation_deadline_time_lunch && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            (Cancel before{" "}
+                            {mess.cancellation_deadline_time_lunch})
+                          </span>
+                        )}
                       </h4>
                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 pl-2">
                         {lunchItems.map((item, index) => (
@@ -290,6 +281,12 @@ const MessDetailPage = () => {
                     <div>
                       <h4 className="font-semibold text-md text-primary mb-2">
                         Dinner
+                        {mess.cancellation_deadline_time_dinner && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            (Cancel before{" "}
+                            {mess.cancellation_deadline_time_dinner})
+                          </span>
+                        )}
                       </h4>
                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 pl-2">
                         {dinnerItems.map((item, index) => (
@@ -387,6 +384,7 @@ const MessDetailPage = () => {
                     {id && (
                       <SubscriptionForm
                         messId={id}
+                        //@ts-ignore
                         pricingPlans={pricingPlans}
                         onSuccess={() => setIsSubscriptionDialogOpen(false)}
                       />

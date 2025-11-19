@@ -16,11 +16,16 @@ const MySubscriptionsPage = () => {
     closedUntil: string | null;
     closureReason: string | null;
   } | null>(null);
+  const [cancellationDeadlines, setCancellationDeadlines] = useState<{
+    breakfast: string | null;
+    lunch: string | null;
+    dinner: string | null;
+  } | null>(null);
 
   const userData = sessionStorage.getItem("user");
   const user = userData ? JSON.parse(userData) : null;
 
-  // 🚀 FIXED: FETCH SUBSCRIPTIONS WITHOUT STATUS FIELD
+  // 🚀 FIXED: FETCH SUBSCRIPTIONS WITH CORRECT CANCELLATION DEADLINE FIELDS
   const fetchUserSubscriptions = async (userId: string) => {
     const { data, error } = await supabase
       .from("subscriptions")
@@ -29,7 +34,9 @@ const MySubscriptionsPage = () => {
         *,
         messes(
           name,
-          cancellation_deadline_time,
+          cancellation_deadline_time_breakfast,
+          cancellation_deadline_time_lunch,
+          cancellation_deadline_time_dinner,
           is_closed,
           closed_from,
           closed_until,
@@ -50,7 +57,7 @@ const MySubscriptionsPage = () => {
     enabled: !!user,
   });
 
-  // 🚀 TODAY’S MEAL FETCH
+  // 🚀 TODAY'S MEAL FETCH
   useEffect(() => {
     const fetchMealData = async () => {
       if (!subscriptions || subscriptions.length === 0) return;
@@ -62,6 +69,12 @@ const MySubscriptionsPage = () => {
           closedFrom: messInfo.closed_from,
           closedUntil: messInfo.closed_until,
           closureReason: messInfo.closure_reason,
+        });
+
+        setCancellationDeadlines({
+          breakfast: messInfo.cancellation_deadline_time_breakfast,
+          lunch: messInfo.cancellation_deadline_time_lunch,
+          dinner: messInfo.cancellation_deadline_time_dinner,
         });
       }
 
@@ -133,6 +146,38 @@ const MySubscriptionsPage = () => {
         </Alert>
       )}
 
+      {/* ------- Cancellation Deadlines Info ------ */}
+      {cancellationDeadlines && !messClosureInfo?.isClosed && (
+        <Alert className="mb-6 border-blue-300 bg-blue-50">
+          <Info className="h-5 w-5 text-blue-600" />
+          <AlertTitle className="text-blue-900 font-bold">
+            Meal Cancellation Deadlines
+          </AlertTitle>
+          <AlertDescription className="text-blue-800 mt-2">
+            <div className="space-y-1 text-sm">
+              {cancellationDeadlines.breakfast && (
+                <p>
+                  <strong>Breakfast:</strong> Cancel before{" "}
+                  {cancellationDeadlines.breakfast}
+                </p>
+              )}
+              {cancellationDeadlines.lunch && (
+                <p>
+                  <strong>Lunch:</strong> Cancel before{" "}
+                  {cancellationDeadlines.lunch}
+                </p>
+              )}
+              {cancellationDeadlines.dinner && (
+                <p>
+                  <strong>Dinner:</strong> Cancel before{" "}
+                  {cancellationDeadlines.dinner}
+                </p>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* ------- Today's Meal Section ------ */}
       <div
         className={`mb-6 p-4 rounded-lg ${
@@ -157,22 +202,47 @@ const MySubscriptionsPage = () => {
             </p>
           </div>
         ) : (
-          <>
-            <p className="font-bold">
-              Breakfast:{" "}
-              <span className="text-sm">
-                {todayBreakfast || "Not available"}
-              </span>
-            </p>
-            <p className="font-bold">
-              Lunch:{" "}
-              <span className="text-sm">{todayLunch || "Not available"}</span>
-            </p>
-            <p className="font-bold">
-              Dinner:{" "}
-              <span className="text-sm">{todayDinner || "Not available"}</span>
-            </p>
-          </>
+          <div className="space-y-2">
+            <div>
+              <p className="font-bold">
+                Breakfast:{" "}
+                <span className="font-normal text-sm">
+                  {todayBreakfast || "Not available"}
+                </span>
+              </p>
+              {cancellationDeadlines?.breakfast && (
+                <p className="text-xs text-gray-500 ml-4">
+                  Cancel before: {cancellationDeadlines.breakfast}
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="font-bold">
+                Lunch:{" "}
+                <span className="font-normal text-sm">
+                  {todayLunch || "Not available"}
+                </span>
+              </p>
+              {cancellationDeadlines?.lunch && (
+                <p className="text-xs text-gray-500 ml-4">
+                  Cancel before: {cancellationDeadlines.lunch}
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="font-bold">
+                Dinner:{" "}
+                <span className="font-normal text-sm">
+                  {todayDinner || "Not available"}
+                </span>
+              </p>
+              {cancellationDeadlines?.dinner && (
+                <p className="text-xs text-gray-500 ml-4">
+                  Cancel before: {cancellationDeadlines.dinner}
+                </p>
+              )}
+            </div>
+          </div>
         )}
       </div>
 

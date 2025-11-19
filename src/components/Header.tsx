@@ -21,8 +21,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { Profile } from "@/types";
-import NotificationBell from "./NotificationBell";
+// import { Profile } from "@/types";
+// import NotificationBell from "./NotificationBell";
 
 const Header = () => {
   const user = sessionStorage.getItem("user");
@@ -125,7 +125,7 @@ const Header = () => {
           <Button variant="ghost" size="icon">
             <Search className="h-5 w-5" />
           </Button>
-          {user && <NotificationBell />}
+          {/* {user && <NotificationBell />} */}
           {user && profileLoading ? (
             <Button variant="outline" size="sm" disabled>
               Loading...
