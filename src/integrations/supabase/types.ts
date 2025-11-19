@@ -50,7 +50,7 @@ export type Database = {
           mess_id: string;
           pickup_food_photo_url: string | null;
           pickup_mess_photo_url: string | null;
-          status: Database["public"]["Enums"]["delivery_status"];
+          // status: Database["public"]["Enums"]["delivery_status"];
           subscription_id: string;
           updated_at: string | null;
         };
@@ -64,7 +64,7 @@ export type Database = {
           mess_id: string;
           pickup_food_photo_url?: string | null;
           pickup_mess_photo_url?: string | null;
-          status?: Database["public"]["Enums"]["delivery_status"];
+          // status?: Database["public"]["Enums"]["delivery_status"];
           subscription_id: string;
           updated_at?: string | null;
         };
@@ -78,7 +78,7 @@ export type Database = {
           mess_id?: string;
           pickup_food_photo_url?: string | null;
           pickup_mess_photo_url?: string | null;
-          status?: Database["public"]["Enums"]["delivery_status"];
+          // status?: Database["public"]["Enums"]["delivery_status"];
           subscription_id?: string;
           updated_at?: string | null;
         };
@@ -113,7 +113,7 @@ export type Database = {
           id: string;
           is_read: boolean;
           message: string;
-          status: Database["public"]["Enums"]["delivery_status"];
+          // status: Database["public"]["Enums"]["delivery_status"];
           user_id: string;
         };
         Insert: {
@@ -122,7 +122,7 @@ export type Database = {
           id?: string;
           is_read?: boolean;
           message: string;
-          status: Database["public"]["Enums"]["delivery_status"];
+          // status: Database["public"]["Enums"]["delivery_status"];
           user_id: string;
         };
         Update: {
@@ -131,7 +131,7 @@ export type Database = {
           id?: string;
           is_read?: boolean;
           message?: string;
-          status?: Database["public"]["Enums"]["delivery_status"];
+          // status?: Database["public"]["Enums"]["delivery_status"];
           user_id?: string;
         };
         Relationships: [
@@ -403,7 +403,7 @@ export type Database = {
           plan_duration_months: number | null;
           plan_price: number | null;
           start_date: string;
-          status: Database["public"]["Enums"]["subscription_status"];
+          // status: Database["public"]["Enums"]["subscription_status"];
           user_id: string;
         };
         Insert: {
@@ -418,7 +418,7 @@ export type Database = {
           plan_duration_months?: number | null;
           plan_price?: number | null;
           start_date: string;
-          status?: Database["public"]["Enums"]["subscription_status"];
+          // status?: Database["public"]["Enums"]["subscription_status"];
           user_id: string;
         };
         Update: {
@@ -433,7 +433,7 @@ export type Database = {
           plan_duration_months?: number | null;
           plan_price?: number | null;
           start_date?: string;
-          status?: Database["public"]["Enums"]["subscription_status"];
+          // status?: Database["public"]["Enums"]["subscription_status"];`
           user_id?: string;
         };
         Relationships: [
@@ -614,17 +614,17 @@ export type Database = {
         | "Friday"
         | "Saturday"
         | "Sunday";
-      delivery_status:
-        | "pending_assignment"
-        | "assigned"
-        | "out_for_delivery"
-        | "delivered"
-        | "failed"
-        | "food_preparing"
-        | "food_ready"
-        | "picked_up";
+      // delivery_status:
+      //   | "pending_assignment"
+      //   | "assigned"
+      //   | "out_for_delivery"
+      //   | "delivered"
+      //   | "failed"
+      //   | "food_preparing"
+      //   | "food_ready"
+      //   | "picked_up";
       meal_type: "breakfast" | "lunch" | "dinner";
-      subscription_status: "pending_owner_confirmation" | "active" | "rejected";
+      // subscription_status: "pending_owner_confirmation" | "active" | "rejected";
     };
     CompositeTypes: {
       [_ in never]: never;

@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface ExpiringSubscription {
   id: string;
@@ -19,23 +19,24 @@ export interface ExpiringSubscription {
 
 export const useSubscriptionExpiration = (daysThreshold: number = 7) => {
   return useQuery({
-    queryKey: ['expiring-subscriptions', daysThreshold],
+    queryKey: ["expiring-subscriptions", daysThreshold],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_expiring_subscriptions', { days_before: daysThreshold });
+      const { data, error } = await supabase.rpc("get_expiring_subscriptions", {
+        days_before: daysThreshold,
+      });
 
       if (error) throw error;
       return data as ExpiringSubscription[];
     },
-    refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
+    refetchInterval: 1000 * 60 * 5,
   });
 };
 
 export const markSubscriptionNotified = async (subscriptionId: string) => {
   const { error } = await supabase
-    .from('subscriptions')
+    .from("subscriptions")
     .update({ expiration_notified: true })
-    .eq('id', subscriptionId);
+    .eq("id", subscriptionId);
 
   if (error) throw error;
 };

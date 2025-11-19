@@ -18,16 +18,24 @@ const MySubscriptionsPage = () => {
   } | null>(null);
 
   const userData = sessionStorage.getItem("user");
-  let user;
-  if (userData) {
-    user = JSON.parse(userData);
-  }
+  const user = userData ? JSON.parse(userData) : null;
 
+  // 🚀 FIXED: FETCH SUBSCRIPTIONS WITHOUT STATUS FIELD
   const fetchUserSubscriptions = async (userId: string) => {
     const { data, error } = await supabase
       .from("subscriptions")
       .select(
-        "*, messes(name, cancellation_deadline_time, is_closed, closed_from, closed_until, closure_reason)"
+        `
+        *,
+        messes(
+          name,
+          cancellation_deadline_time,
+          is_closed,
+          closed_from,
+          closed_until,
+          closure_reason
+        )
+        `
       )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
@@ -38,26 +46,26 @@ const MySubscriptionsPage = () => {
 
   const { data: subscriptions, isLoading } = useQuery({
     queryKey: ["mySubscriptions", user?.id],
-    queryFn: () => fetchUserSubscriptions(user!.id),
+    queryFn: () => fetchUserSubscriptions(user.id),
     enabled: !!user,
   });
 
+  // 🚀 TODAY’S MEAL FETCH
   useEffect(() => {
     const fetchMealData = async () => {
       if (!subscriptions || subscriptions.length === 0) return;
 
-      // Get mess closure info
       const messInfo = subscriptions[0].messes;
       if (messInfo) {
         setMessClosureInfo({
-          isClosed: messInfo.is_closed || false,
+          isClosed: messInfo.is_closed ?? false,
           closedFrom: messInfo.closed_from,
           closedUntil: messInfo.closed_until,
           closureReason: messInfo.closure_reason,
         });
       }
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("today_meals")
         .select("*")
         .eq("mess_id", subscriptions[0].mess_id)
@@ -69,6 +77,7 @@ const MySubscriptionsPage = () => {
         setTodayDinner(data.dinner || "");
       }
     };
+
     fetchMealData();
   }, [subscriptions]);
 
@@ -87,7 +96,7 @@ const MySubscriptionsPage = () => {
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-6">My Subscriptions</h1>
 
-      {/* Mess Closure Banner */}
+      {/* ------- Mess Closure Banner ------ */}
       {messClosureInfo?.isClosed && (
         <Alert variant="destructive" className="mb-6 border-red-300 bg-red-50">
           <AlertCircle className="h-5 w-5 text-red-600" />
@@ -108,22 +117,23 @@ const MySubscriptionsPage = () => {
                   </p>
                 </>
               )}
+
               {messClosureInfo.closureReason && (
                 <p className="mt-2">
                   <strong>Reason:</strong> {messClosureInfo.closureReason}
                 </p>
               )}
+
               <p className="mt-3 text-sm">
                 No meals will be served during this period. Your subscription
-                remains active and will resume automatically when the mess
-                reopens.
+                remains active and will resume when the mess reopens.
               </p>
             </div>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Today's Meal Section */}
+      {/* ------- Today's Meal Section ------ */}
       <div
         className={`mb-6 p-4 rounded-lg ${
           messClosureInfo?.isClosed ? "bg-gray-100 opacity-60" : "bg-gray-50"
@@ -131,12 +141,14 @@ const MySubscriptionsPage = () => {
       >
         <div className="flex items-center gap-2 mb-2">
           <h2 className="font-bold text-xl">Today's Meal</h2>
+
           {messClosureInfo?.isClosed && (
             <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
               Not Available
             </span>
           )}
         </div>
+
         {messClosureInfo?.isClosed ? (
           <div className="flex items-start gap-2 mt-2">
             <Info className="h-4 w-4 text-gray-500 mt-0.5" />
@@ -146,28 +158,25 @@ const MySubscriptionsPage = () => {
           </div>
         ) : (
           <>
-            <p className="font-bold text-md">
+            <p className="font-bold">
               Breakfast:{" "}
-              <span className="text-gray-800 text-sm">
+              <span className="text-sm">
                 {todayBreakfast || "Not available"}
               </span>
             </p>
-            <p className="font-bold text-md">
+            <p className="font-bold">
               Lunch:{" "}
-              <span className="text-gray-800 text-sm">
-                {todayLunch || "Not available"}
-              </span>
+              <span className="text-sm">{todayLunch || "Not available"}</span>
             </p>
-            <p className="font-bold text-md">
+            <p className="font-bold">
               Dinner:{" "}
-              <span className="text-gray-800 text-sm">
-                {todayDinner || "Not available"}
-              </span>
+              <span className="text-sm">{todayDinner || "Not available"}</span>
             </p>
           </>
         )}
       </div>
 
+      {/* ------- Subscription List Component ------ */}
       {isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
