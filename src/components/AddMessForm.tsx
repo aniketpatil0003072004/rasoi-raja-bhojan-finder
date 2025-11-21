@@ -100,6 +100,8 @@ const messFormSchema = z.object({
   cancellation_deadline_time_lunch: z
     .string()
     .regex(/^\d{2}:\d{2}$/, "Enter time in HH:MM format"),
+  upiId: z.string(),
+  upiName: z.string(),
 });
 
 type MessFormValues = z.infer<typeof messFormSchema>;
@@ -134,6 +136,8 @@ const AddMessForm = () => {
       cancellation_deadline_time_breakfast: "",
       cancellation_deadline_time_dinner: "",
       cancellation_deadline_time_lunch: "",
+      upiId: "",
+      upiName: "",
     },
   });
 
@@ -542,6 +546,32 @@ const AddMessForm = () => {
               <FormDescription>
                 Upload an image for your mess (optional, max 5MB).
               </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="upiId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>UPI ID</FormLabel>
+              <FormControl>
+                <Input placeholder="abc@upi" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="upiName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>UPI Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Ajay Sk" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

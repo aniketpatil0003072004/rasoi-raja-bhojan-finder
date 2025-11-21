@@ -118,6 +118,20 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
   const onSubmit = async (value: SubscriptionFormValues) => {
     console.log(value);
     console.log("Payment initiated");
+    const amount = selectedPlan.price;
+    const payeeVPA = "upi_id";
+    const payeeName = "name";
+    const transactionNote = `paying to mess ${mess_name} amount : ${amount}`;
+
+    const generateUPILink = () => {
+      const upiLink = `upi://pay?pa=${payeeVPA}&pn=${encodeURIComponent(
+        payeeName
+      )}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}&mc=0000`;
+      return upiLink;
+    };
+
+    const link = generateUPILink();
+    window.location.href = link;
   };
 
   const onSubmit1 = async (values: SubscriptionFormValues) => {
