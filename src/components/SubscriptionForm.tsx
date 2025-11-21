@@ -81,6 +81,22 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     return data;
   };
 
+  const fetchUpiInfo = async () => {
+    const { data: upiData, error: upiDataError } = await supabase
+      .from("messes")
+      .select("name, upi_id, upi_name")
+      .eq("id", messId)
+      .single();
+
+    return upiData;
+  };
+
+  const { data: upiData, isLoading: upiLoading } = useQuery({
+    queryKey: ["messUpiData", messId],
+    queryFn: fetchUpiInfo,
+    enabled: !!user,
+  });
+
   const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ["user", user?.id],
     queryFn: fetchProfile,
@@ -116,17 +132,26 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
   };
 
   const onSubmit = async (value: SubscriptionFormValues) => {
-    console.log(value);
     console.log("Payment initiated");
-    const amount = selectedPlan.price;
-    const payeeVPA = "upi_id";
-    const payeeName = "name";
-    const transactionNote = `paying to mess ${mess_name} amount : ${amount}`;
+
+    const amount = 10;
+    const amountFormatted = Number(amount).toFixed(2);
+
+    const payeeVPA = upiData.upi_id;
+    const payeeName = upiData.upi_name;
+    const transactionNote = `paying to ${upiData.name} amount: ${amountFormatted}`;
+
+    const tr = "TXN" + Date.now().toString().slice(-10);
 
     const generateUPILink = () => {
-      const upiLink = `upi://pay?pa=${payeeVPA}&pn=${encodeURIComponent(
-        payeeName
-      )}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}&mc=0000`;
+      const pa = payeeVPA;
+      const pn = encodeURIComponent(payeeName);
+      const tn = encodeURIComponent(transactionNote);
+
+      const upiLink = `upi://pay?pa=${pa}&pn=${pn}&am=${amountFormatted}&tn=${tn}&tr=${tr}&cu=INR`;
+      // const upiLink = `upi://pay?pa=${payeeVPA}&am=${amountFormatted}&cu=INR`;
+      // const upiLink = `upi://pay?pa=paytmqr281005050101y6xbfrjuid54@paytm&am=1&cu=INR`;
+      console.log("UPI LINK:", upiLink);
       return upiLink;
     };
 
