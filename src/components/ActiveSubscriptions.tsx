@@ -25,14 +25,12 @@ import { useMemo } from "react";
 const ActiveSubscriptions = () => {
   const { subscriptions, isLoading, error } = useOwnerSubscriptions();
 
-  // Get mess_id from the first subscription
   const messId = useMemo(() => {
     return subscriptions && subscriptions.length > 0
       ? subscriptions[0].mess_id
       : null;
   }, [subscriptions]);
 
-  // Fetch cancelled meals for today for this specific mess
   const getCancelMealTodayData = async (messId: string) => {
     const today = new Date().toISOString().split("T")[0];
 
@@ -66,7 +64,6 @@ const ActiveSubscriptions = () => {
     enabled: !!messId,
   });
 
-  // Group cancelled meals by user and meal type
   const userMealStatus = useMemo(() => {
     if (!cancelMealData) return new Map();
 

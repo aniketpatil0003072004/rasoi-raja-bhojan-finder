@@ -13,7 +13,6 @@ const OwnerDashboardPage = () => {
   const user = JSON.parse(userData);
   const [messId, setMessId] = useState("");
 
-  // Mess closure states
   const [isClosed, setIsClosed] = useState(false);
   const [closedFrom, setClosedFrom] = useState("");
   const [closedUntil, setClosedUntil] = useState("");
