@@ -63,7 +63,7 @@ const subscriptionSchema = z.object({
 type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
 
 interface PricingPlan {
-  months: number;
+  month: number;
   price: number;
 }
 
@@ -129,7 +129,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
 
   const handlePlanChange = (value: string) => {
     const months = parseInt(value);
-    const plan = pricingPlans.find((p) => p.months === months);
+    const plan = pricingPlans.find((p) => p.month === month);
     setSelectedPlan(plan || null);
     form.setValue("planDuration", value);
   };
@@ -190,7 +190,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
       // Calculate dates
       const startDate = new Date();
       const endDate = new Date();
-      endDate.setMonth(startDate.getMonth() + selectedPlan.months);
+      endDate.setMonth(startDate.getMonth() + selectedPlan.month);
 
       // Create subscription with dynamic plan data
       const { error: subscriptionError } = await supabase
@@ -201,7 +201,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
           start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),
           payment_screenshot_url: uploadData.path,
-          plan_duration_months: selectedPlan.months,
+          plan_duration_months: selectedPlan.month,
           plan_price: selectedPlan.price,
         });
 
@@ -314,13 +314,10 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                 </FormControl>
                 <SelectContent>
                   {pricingPlans.map((plan) => (
-                    <SelectItem
-                      key={plan.months}
-                      value={plan.months.toString()}
-                    >
+                    <SelectItem key={plan.month} value={plan.price.toString()}>
                       <div className="flex items-center justify-between w-full gap-4">
                         <span className="font-medium">
-                          {plan.months} {plan.months === 1 ? "Month" : "Months"}
+                          {plan.month} {plan.month === 1 ? "Month" : "Months"}
                         </span>
                         <span className="flex items-center text-green-600 font-semibold">
                           <IndianRupee className="w-3 h-3" />
@@ -335,12 +332,12 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                 {selectedPlan && (
                   <span className="text-sm font-medium text-primary">
                     Total Amount: ₹{selectedPlan.price.toLocaleString("en-IN")}{" "}
-                    for {selectedPlan.months}{" "}
-                    {selectedPlan.months === 1 ? "month" : "months"}
-                    {selectedPlan.months > 1 && (
+                    for {selectedPlan.month}{" "}
+                    {selectedPlan.month === 1 ? "month" : "months"}
+                    {selectedPlan.month > 1 && (
                       <span className="text-muted-foreground ml-1">
                         (₹
-                        {(selectedPlan.price / selectedPlan.months).toFixed(0)}
+                        {(selectedPlan.price / selectedPlan.month).toFixed(0)}
                         /month)
                       </span>
                     )}

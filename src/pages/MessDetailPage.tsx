@@ -129,6 +129,7 @@ const MessDetailPage = () => {
     if (!mess?.pricing_plans || !Array.isArray(mess.pricing_plans)) {
       return [];
     }
+
     // Sort plans by duration for better display
     return [...mess.pricing_plans].sort((a, b) => a.months - b.months);
   }, [mess?.pricing_plans]);
