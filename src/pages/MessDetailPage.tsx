@@ -322,11 +322,11 @@ const MessDetailPage = () => {
                     >
                       <div className="flex flex-col">
                         <span className="font-semibold text-foreground">
-                          {plan.months} {plan.months === 1 ? "Month" : "Months"}
+                          {plan.month} {plan.month === 1 ? "Month" : "Months"}
                         </span>
                         {plan.months >= 3 && (
                           <span className="text-xs text-muted-foreground">
-                            ₹{(plan.price / plan.months).toFixed(0)}/month
+                            ₹{(plan.price / plan.month).toFixed(0)}/month
                           </span>
                         )}
                       </div>
