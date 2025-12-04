@@ -56,11 +56,11 @@ const messFormSchema = z.object({
   weekly_plan_price: z.coerce.number(),
   pricing_plans: z.array(
     z.object({
-      month: z.coerce
+      months: z.coerce
         .number()
-        .positive("Month must be a positive number.")
-        .max(12, "Month cannot be more than 12.")
-        .min(1, "Month must be at least 1."),
+        .positive("Months must be a positive number.")
+        .max(12, "Months cannot be more than 12.")
+        .min(1, "Months must be at least 1."),
       price: z.coerce.number().positive("Price must be a positive number."),
     })
   ),
@@ -122,7 +122,7 @@ const AddMessForm = () => {
       address: "",
       pricing_plans: [
         {
-          month: 1,
+          months: 1,
           price: 1234,
         },
       ],
@@ -190,6 +190,8 @@ const AddMessForm = () => {
           values.cancellation_deadline_time_lunch,
         cancellation_deadline_time_lunch:
           values.cancellation_deadline_time_dinner,
+        upi_id: values.upiId,
+        upi_name: values.upiName,
       };
 
       const { data, error } = await supabase
@@ -301,7 +303,7 @@ const AddMessForm = () => {
             <div key={index} className="flex items-center gap-4">
               <FormField
                 control={form.control}
-                name={`pricing_plans.${index}.month`}
+                name={`pricing_plans.${index}.months`}
                 render={({ field }) => (
                   <FormItem className="w-full">
                     <FormLabel>Month(s)</FormLabel>
@@ -354,7 +356,7 @@ const AddMessForm = () => {
             onClick={() =>
               form.setValue("pricing_plans", [
                 ...form.getValues("pricing_plans"),
-                { month: 1, price: 0 },
+                { months: 1, price: 0 },
               ])
             }
           >

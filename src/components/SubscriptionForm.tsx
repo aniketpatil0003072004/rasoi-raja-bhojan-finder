@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +16,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, IndianRupee, QrCode, ArrowLeft, CheckCircle2, Copy, Download } from "lucide-react";
+import {
+  Loader2,
+  IndianRupee,
+  QrCode,
+  ArrowLeft,
+  CheckCircle2,
+  Copy,
+  Download,
+} from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -221,8 +228,16 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
 
       // Calculate dates
       const startDate = new Date();
-      const endDate = new Date();
-      endDate.setMonth(startDate.getMonth() + selectedPlan.months);
+      const endDate = new Date(startDate);
+
+      console.log(endDate.getMonth());
+
+      console.log(selectedPlan);
+
+      endDate.setMonth(endDate.getMonth() + selectedPlan.month);
+
+      console.log("Start Date:", startDate);
+      console.log("End Date:", endDate);
 
       // Create subscription
       const { error: subscriptionError } = await supabase
@@ -230,13 +245,10 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
         .insert({
           user_id: user.id,
           mess_id: messId,
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
+          start_date: startDate,
+          end_date: endDate,
           plan_duration_months: selectedPlan.months,
           plan_price: selectedPlan.price,
-          // Store transaction ID if provided (assuming we add a column for it later or put it in notes)
-          // For now, we just create the subscription.
-          // You might want to add a 'transaction_id' column to 'subscriptions' table too.
         });
 
       if (subscriptionError) {
@@ -294,18 +306,21 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
         </div>
 
         <div className="space-y-6 text-center px-1">
-
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-left space-y-3">
             <div className="flex items-start gap-3">
               <div className="bg-amber-100 p-2 rounded-full">
                 <IndianRupee className="w-5 h-5 text-amber-700" />
               </div>
               <div>
-                <h4 className="font-semibold text-amber-900">High Value Transaction</h4>
+                <h4 className="font-semibold text-amber-900">
+                  High Value Transaction
+                </h4>
                 <p className="text-sm text-amber-800 mt-1">
-                  For amounts over ₹2,000, scanning QR codes often fails due to banking limits.
+                  For amounts over ₹2,000, scanning QR codes often fails due to
+                  banking limits.
                   <br />
-                  <strong>Best Method:</strong> Copy the UPI ID below and pay manually in your app.
+                  <strong>Best Method:</strong> Copy the UPI ID below and pay
+                  manually in your app.
                 </p>
               </div>
             </div>
@@ -326,15 +341,18 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
 
                     // Try to copy
                     if (navigator.clipboard && window.isSecureContext) {
-                      navigator.clipboard.writeText(upiId).then(() => {
-                        toast.success("UPI ID copied!");
-                      }).catch(() => {
-                        toast.info("UPI ID selected. Long press to copy!");
-                      });
+                      navigator.clipboard
+                        .writeText(upiId)
+                        .then(() => {
+                          toast.success("UPI ID copied!");
+                        })
+                        .catch(() => {
+                          toast.info("UPI ID selected. Long press to copy!");
+                        });
                     } else {
                       // Fallback: just select the text
                       try {
-                        document.execCommand('copy');
+                        document.execCommand("copy");
                         toast.success("UPI ID copied!");
                       } catch {
                         toast.info("UPI ID selected. Long press to copy!");
@@ -347,7 +365,9 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                   variant="secondary"
                   onClick={async () => {
                     const upiId = upiData?.upi_id || "";
-                    const input = document.querySelector('input[value="' + upiId + '"]') as HTMLInputElement;
+                    const input = document.querySelector(
+                      'input[value="' + upiId + '"]'
+                    ) as HTMLInputElement;
 
                     if (input) {
                       input.focus();
@@ -370,11 +390,13 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                         textArea.select();
 
                         try {
-                          const successful = document.execCommand('copy');
+                          const successful = document.execCommand("copy");
                           if (successful) {
                             toast.success("UPI ID copied!");
                           } else {
-                            toast.info("Tap the UPI ID and long press to copy!");
+                            toast.info(
+                              "Tap the UPI ID and long press to copy!"
+                            );
                           }
                         } catch (err) {
                           toast.info("Tap the UPI ID and long press to copy!");
@@ -394,17 +416,29 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                 Name: <strong>{upiData?.upi_name || upiData?.name}</strong>
               </p>
               <p className="text-xs text-amber-600 italic">
-                💡 Tip: Tap the UPI ID above and long-press to copy if button doesn't work
+                💡 Tip: Tap the UPI ID above and long-press to copy if button
+                doesn't work
               </p>
             </div>
 
             <div className="bg-slate-50 p-4 rounded-xl border space-y-3 text-left">
               <h4 className="font-medium text-sm">How to pay:</h4>
               <ol className="list-decimal list-inside text-sm text-muted-foreground space-y-2">
-                <li>Copy the <strong>UPI ID</strong> above.</li>
+                <li>
+                  Copy the <strong>UPI ID</strong> above.
+                </li>
                 <li>Open GPay, PhonePe, or Paytm.</li>
-                <li>Select <strong>"Pay to UPI ID"</strong> or <strong>"To Bank/UPI ID"</strong>.</li>
-                <li>Paste the ID and enter amount: <strong>₹{selectedPlan?.price.toLocaleString("en-IN")}</strong>.</li>
+                <li>
+                  Select <strong>"Pay to UPI ID"</strong> or{" "}
+                  <strong>"To Bank/UPI ID"</strong>.
+                </li>
+                <li>
+                  Paste the ID and enter amount:{" "}
+                  <strong>
+                    ₹{selectedPlan?.price.toLocaleString("en-IN")}
+                  </strong>
+                  .
+                </li>
               </ol>
             </div>
           </div>
@@ -423,7 +457,11 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
           <div className="bg-white p-4 rounded-xl shadow-sm border inline-block mx-auto relative group">
             {qrCodeUrl ? (
               <>
-                <img src={qrCodeUrl} alt="Payment QR Code" className="w-32 h-32" />
+                <img
+                  src={qrCodeUrl}
+                  alt="Payment QR Code"
+                  className="w-32 h-32"
+                />
                 <Button
                   variant="secondary"
                   size="sm"
@@ -469,7 +507,10 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Input placeholder="Enter Transaction ID / UTR (Required)" {...field} />
+                        <Input
+                          placeholder="Enter Transaction ID / UTR (Required)"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -561,7 +602,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                     <SelectItem key={plan.months} value={plan.price.toString()}>
                       <div className="flex items-center justify-between w-full gap-4">
                         <span className="font-medium">
-                          {plan.months} {plan.months === 1 ? "Month" : "Months"}
+                          {plan.month} {plan.month === 1 ? "Month" : "Months"}
                         </span>
                         <span className="flex items-center text-green-600 font-semibold">
                           <IndianRupee className="w-3 h-3" />
