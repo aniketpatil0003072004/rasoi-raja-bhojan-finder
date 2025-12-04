@@ -79,6 +79,7 @@ const MySubscriptions = ({
                   <TableHead>Mess</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Price</TableHead>
+                  <TableHead>Meals Used</TableHead>
                   <TableHead>Start Date</TableHead>
                   <TableHead>End Date</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -86,60 +87,103 @@ const MySubscriptions = ({
               </TableHeader>
 
               <TableBody>
-                {subscriptions.map((sub) => (
-                  <TableRow key={sub.id}>
-                    <TableCell className="font-medium">
-                      {sub.messes?.name || "N/A"}
-                    </TableCell>
+                {subscriptions.map((sub) => {
+                  // Calculate total meals: 30 days per month * 2 meals per day (lunch + dinner)
+                  // Or you can use: months * 30 * 2 for a simple calculation
+                  const totalMeals = (sub.plan_duration_months || 1) * 30 * 2;
 
-                    <TableCell>
-                      {sub.plan_duration_months
-                        ? `${sub.plan_duration_months} ${
-                            sub.plan_duration_months === 1 ? "Month" : "Months"
+                  // Calculate days elapsed
+                  const startDate = new Date(sub.start_date);
+                  const today = new Date();
+                  const endDate = new Date(sub.end_date);
+
+                  // Only count days if subscription has started and hasn't ended
+                  const daysElapsed = today >= startDate && today <= endDate
+                    ? Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+                    : today > endDate
+                      ? Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+                      : 0;
+
+                  // Meals consumed = days elapsed * 2 (assuming lunch + dinner daily)
+                  const mealsConsumed = Math.min(daysElapsed * 2, totalMeals);
+
+                  // Calculate percentage for progress indication
+                  const percentage = (mealsConsumed / totalMeals) * 100;
+
+                  return (
+                    <TableRow key={sub.id}>
+                      <TableCell className="font-medium">
+                        {sub.messes?.name || "N/A"}
+                      </TableCell>
+
+                      <TableCell>
+                        {sub.plan_duration_months
+                          ? `${sub.plan_duration_months} ${sub.plan_duration_months === 1 ? "Month" : "Months"
                           }`
-                        : "N/A"}
-                    </TableCell>
+                          : "N/A"}
+                      </TableCell>
 
-                    <TableCell className="font-semibold">
-                      {sub.plan_price ? `₹${sub.plan_price}` : "N/A"}
-                    </TableCell>
+                      <TableCell className="font-semibold">
+                        {sub.plan_price ? `₹${sub.plan_price}` : "N/A"}
+                      </TableCell>
 
-                    <TableCell>
-                      {new Date(sub.start_date).toLocaleDateString()}
-                    </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-primary">
+                              {mealsConsumed}/{totalMeals}
+                            </span>
+                            <Badge variant={percentage > 80 ? "destructive" : "secondary"} className="text-xs">
+                              {percentage.toFixed(0)}%
+                            </Badge>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div
+                              className={`h-1.5 rounded-full transition-all ${percentage > 80 ? "bg-red-500" : "bg-primary"
+                                }`}
+                              style={{ width: `${Math.min(percentage, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </TableCell>
 
-                    <TableCell>
-                      {new Date(sub.end_date).toLocaleDateString()}
-                    </TableCell>
+                      <TableCell>
+                        {new Date(sub.start_date).toLocaleDateString()}
+                      </TableCell>
 
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {sub.owner_confirmation_screenshot_url && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleViewConfirmation(
-                                sub.owner_confirmation_screenshot_url!,
-                                sub.messes?.name || "Mess"
-                              )
-                            }
-                          >
-                            View Confirmation
+                      <TableCell>
+                        {new Date(sub.end_date).toLocaleDateString()}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {sub.owner_confirmation_screenshot_url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleViewConfirmation(
+                                  sub.owner_confirmation_screenshot_url!,
+                                  sub.messes?.name || "Mess"
+                                )
+                              }
+                            >
+                              View Confirmation
+                            </Button>
+                          )}
+
+                          <Button asChild size="sm">
+                            <Link to={`/mess/${sub.mess_id}`}>Renew</Link>
                           </Button>
-                        )}
 
-                        <Button asChild size="sm">
-                          <Link to={`/mess/${sub.mess_id}`}>Renew</Link>
-                        </Button>
-
-                        <Button asChild variant="secondary" size="sm">
-                          <Link to="/messes">Find New Mess</Link>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          <Button asChild variant="secondary" size="sm">
+                            <Link to="/messes">Find New Mess</Link>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
 
